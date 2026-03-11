@@ -1,6 +1,7 @@
 # AgriSol-AI | 农光智助·银青共富平台
 
 > AI-powered agrivoltaic optimization platform for sustainable farming and solar energy management
+> 多模态AI驱动的农光互补全年龄段绿色优化助手，农业 + 能源 + 环境 + 人文四位一体
 
 ## 项目简介 | Project Overview
 
