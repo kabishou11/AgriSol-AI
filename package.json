@@ -1,0 +1,36 @@
+{
+  "name": "agri-energy-platform",
+  "version": "1.0.0",
+  "description": "农光智助·银青共富平台 - 多模态AI驱动的农光互补全年龄段绿色优化助手",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter web dev & pnpm --filter server dev",
+    "build": "pnpm --filter web build && pnpm --filter server build",
+    "preview": "pnpm --filter web preview",
+    "server": "pnpm --filter server dev",
+    "web": "pnpm --filter web dev",
+    "install:all": "pnpm install && pnpm --filter server install && pnpm --filter web install",
+    "clean": "pnpm --filter web clean && pnpm --filter server clean && rm -rf node_modules"
+  },
+  "keywords": [
+    "agriculture",
+    "energy",
+    "environment",
+    "ai",
+    "multimodal",
+    "carbon-credit"
+  ],
+  "author": "Development Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.20.0",
+    "prettier": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
