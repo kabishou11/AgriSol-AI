@@ -60,7 +60,11 @@
       "Bash(cd \"F:\\\\1work\\\\农业能源环境\\\\web\" && pnpm build 2>&1 | tail -15)",
       "Bash(cd \"F:\\\\1work\\\\农业能源环境\\\\server\" && node --check src/routes/ai.js && echo \"✓ ai.js syntax OK\")",
       "Bash(cd \"F:\\\\1work\\\\农业能源环境\\\\web\" && pnpm build 2>&1 | grep -E \"\\(built|error|✓\\)\" | tail -5)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && ls -la .env* 2>&1)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && rm -f .env && echo \"Removed server/.env\")",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node -e \"import\\('./src/config.js'\\).then\\(m => console.log\\('API Key loaded:', m.default.modelScopeApiKey ? 'YES \\(length: ' + m.default.modelScopeApiKey.length + '\\)' : 'NO'\\)\\)\")"
     ]
   }
 }

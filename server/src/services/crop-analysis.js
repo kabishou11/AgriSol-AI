@@ -95,17 +95,21 @@ class CropAnalysisService {
       }
 
       const base64Image = imageBuffer.toString('base64')
+      console.log('[CropAnalysis] Calling AI service for image analysis...')
       const aiResult = await analyzeCropImageStructured(base64Image)
+      console.log('[CropAnalysis] AI result:', aiResult ? 'SUCCESS' : 'NULL/FAILED')
 
       let cropType = '未知作物'
       let pests = []
       let growthStage = '生长期'
 
       if (aiResult && aiResult.cropType) {
+        console.log('[CropAnalysis] Using AI result:', aiResult.cropType)
         cropType = aiResult.cropType
         pests = aiResult.pests || []
         growthStage = aiResult.growthStage || growthStage
       } else {
+        console.log('[CropAnalysis] AI failed, using mock data')
         cropType = this.mockCropType()
         pests = this.mockPestDetection()
         growthStage = this.mockGrowthStage()
