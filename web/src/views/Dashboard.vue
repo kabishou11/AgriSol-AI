@@ -7,7 +7,7 @@
         <a-card class="metric-card agriculture">
           <a-statistic title="农业健康" :value="overview.agriculture.avgHealthScore" :precision="1" suffix="分">
             <template #prefix>
-              <icon-leaf />
+              <span>🌾</span>
             </template>
           </a-statistic>
           <div class="trend" :class="{ positive: overview.agriculture.trend > 0 }">
@@ -89,7 +89,7 @@
         <a-card title="快速操作" :bordered="false" class="quick-actions">
           <a-space direction="vertical" fill>
             <a-button type="primary" long @click="$router.push('/crop')">
-              <icon-leaf /> 分析作物
+              🌾 分析作物
             </a-button>
             <a-button type="primary" long @click="$router.push('/energy')">
               <icon-sun /> 能源预测
@@ -162,7 +162,7 @@ import { Message } from '@arco-design/web-vue';
 import api from '../api';
 import DashboardCharts from '../components/charts/DashboardCharts.vue';
 import {
-  IconLeaf, IconSun, IconCloud, IconUserGroup, IconArrowUp, IconArrowDown,
+  IconSun, IconCloud, IconUserGroup, IconArrowUp, IconArrowDown,
   IconSunFill, IconCheckCircleFill, IconBook
 } from '@arco-design/web-vue/es/icon';
 

@@ -106,7 +106,7 @@
             size="large"
             style="width: 200px; background: #52c41a; border-color: #52c41a; font-size: 16px"
           >
-            <template #icon><icon-calculator /></template>
+            <template #icon><icon-formula /></template>
             立即计算碳汇量
           </a-button>
         </a-form-item>
@@ -220,7 +220,7 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { IconCalculator, IconSave, IconDownload, IconRefresh } from '@arco-design/web-vue/es/icon'
+import { IconFormula, IconSave, IconDownload, IconRefresh } from '@arco-design/web-vue/es/icon'
 import * as echarts from 'echarts'
 import apiService from '../api.js'
 

@@ -132,7 +132,7 @@
                   保存监测数据
                 </a-button>
                 <a-button @click="handleCalculateScore">
-                  <template #icon><icon-calculator /></template>
+                  <template #icon><icon-formula /></template>
                   计算环境评分
                 </a-button>
               </a-space>
@@ -251,7 +251,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import {
   IconSave,
-  IconCalculator,
+  IconFormula,
   IconCheckCircle,
   IconRefresh
 } from '@arco-design/web-vue/es/icon'

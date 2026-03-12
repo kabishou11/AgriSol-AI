@@ -141,7 +141,7 @@
                 <a-space>
                   <icon-sun-fill v-if="record.cloudCover < 30" style="color: #FFC107" />
                   <icon-cloud v-else-if="record.cloudCover < 70" style="color: #9E9E9E" />
-                  <icon-cloud-fill v-else style="color: #607D8B" />
+                  <icon-cloud v-else style="color: #607D8B" />
                   <span>{{ record.cloudCover }}%</span>
                 </a-space>
               </template>
@@ -277,7 +277,6 @@ import {
   IconArrowDown,
   IconRefresh,
   IconCloud,
-  IconCloudFill,
   IconExclamationCircleFill,
   IconInfoCircleFill,
   IconPlus
