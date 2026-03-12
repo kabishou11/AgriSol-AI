@@ -82,7 +82,18 @@
       "Bash(netstat -ano)",
       "Bash(xargs -I {} taskkill //F //PID {})",
       "Bash(sleep 3 && curl -s http://localhost:3010/api/crops/history?limit=2 2>&1)",
-      "Bash(curl -s http://localhost:3010/api/crops/statistics 2>&1)"
+      "Bash(curl -s http://localhost:3010/api/crops/statistics 2>&1)",
+      "Bash(sleep 3 && curl -s http://localhost:3010/api/user/activities?limit=2 2>&1)",
+      "Bash(curl -s http://localhost:3010/api/wisdom?limit=2 2>&1)",
+      "Bash(curl -s http://localhost:3010/api/crops/history?limit=1 2>&1)",
+      "Bash(curl -s http://localhost:3010/api/energy/history?limit=1 2>&1)",
+      "Bash(curl -s http://localhost:3010/api/energy/daily 2>&1 | head -100)",
+      "Bash(curl -s http://localhost:3010/api/carbon/records?limit=1 2>&1)",
+      "Bash(curl -s http://localhost:3010/api/carbon 2>&1 | head -100)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node --input-type=module << 'EOF'\nimport db from './src/database.js'\n\nconst wisdom = db.prepare\\('SELECT * FROM wisdom_records ORDER BY created_at DESC LIMIT 1'\\).get\\(\\)\nconsole.log\\('Wisdom record:', JSON.stringify\\(wisdom, null, 2\\)\\)\nEOF)",
+      "Bash(sleep 1 && curl -s http://localhost:3010/api/wisdom/list?limit=1 2>&1)",
+      "Bash(curl -s http://localhost:3010/api/wisdom/recent 2>&1 | python -m json.tool 2>&1 | head -30)",
+      "Bash(curl -s \"http://localhost:3010/api/wisdom/search?keyword=水稻&limit=1\" 2>&1)"
     ]
   }
 }

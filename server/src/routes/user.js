@@ -1,4 +1,5 @@
 import db from '../database.js';
+import { formatRecordDates, formatRecordsDates } from '../utils/date-formatter.js';
 
 const normalizeDates = (obj) => {
   if (!obj || typeof obj !== 'object') return obj;
