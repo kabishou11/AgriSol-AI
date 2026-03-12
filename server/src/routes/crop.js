@@ -47,14 +47,41 @@ export default async function cropRoutes(fastify, options) {
         VALUES (?, ?, ?, ?)
       `)
       const result = stmt.run(filename, imageUrl, stats.size, data.mimetype)
+      const imageId = result.lastInsertRowid
+
+      // 自动进行AI分析
+      console.log('[Upload] Starting AI analysis for:', filename)
+      const analysisResult = await cropAnalysisService.analyzeImage(filepath)
+      console.log('[Upload] AI analysis completed:', analysisResult.cropType)
+
+      // 保存分析结果到数据库
+      const analysisStmt = db.prepare(`
+        INSERT INTO crop_records (
+          image_id, crop_type, health_score, health_status,
+          growth_stage, pests_detected, recommendations, analysis_data
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `)
+
+      const analysisRecord = analysisStmt.run(
+        imageId,
+        analysisResult.cropType,
+        analysisResult.healthScore,
+        analysisResult.healthStatus,
+        analysisResult.growthStage,
+        JSON.stringify(analysisResult.pests),
+        JSON.stringify(analysisResult.recommendations),
+        JSON.stringify(analysisResult)
+      )
 
       return {
         success: true,
         data: {
-          id: result.lastInsertRowid,
+          id: imageId,
           url: imageUrl,
-          filename: filename
-        }
+          filename: filename,
+          recordId: analysisRecord.lastInsertRowid
+        },
+        ...analysisResult
       }
     } catch (error) {
       fastify.log.error(error)
