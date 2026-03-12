@@ -8,56 +8,63 @@
     @collapse="handleCollapse"
   >
     <a-menu
-      :default-selected-keys="[currentRoute]"
-      :style="{ marginTop: '20px' }"
+      :selected-keys="[currentRoute]"
+      :style="{ marginTop: '8px' }"
       @menu-item-click="handleMenuClick"
     >
       <a-menu-item key="home">
-        <template #icon>
-          <icon-home />
-        </template>
+        <template #icon><icon-home /></template>
         首页
       </a-menu-item>
 
       <a-menu-item key="dashboard">
-        <template #icon>
-          <icon-dashboard />
-        </template>
+        <template #icon><icon-dashboard /></template>
         数据仪表板
       </a-menu-item>
 
+      <a-divider style="margin: 8px 0;" />
+
       <a-menu-item key="crop">
-        <template #icon>
-          <span style="font-size: 18px;">🌾</span>
-        </template>
+        <template #icon><span style="font-size:16px">🌾</span></template>
         作物分析
       </a-menu-item>
 
       <a-menu-item key="energy">
-        <template #icon>
-          <span style="font-size: 18px;">⚡</span>
-        </template>
+        <template #icon><span style="font-size:16px">⚡</span></template>
         能源监测
       </a-menu-item>
 
       <a-menu-item key="carbon">
-        <template #icon>
-          <span style="font-size: 18px;">🌍</span>
-        </template>
-        碳排放
+        <template #icon><span style="font-size:16px">🌍</span></template>
+        碳汇计算
       </a-menu-item>
 
+      <a-menu-item key="environment">
+        <template #icon><span style="font-size:16px">🌿</span></template>
+        环境监测
+      </a-menu-item>
+
+      <a-divider style="margin: 8px 0;" />
+
       <a-menu-item key="wisdom">
-        <template #icon>
-          <span style="font-size: 18px;">📝</span>
-        </template>
+        <template #icon><span style="font-size:16px">📝</span></template>
         农事记录
       </a-menu-item>
 
+      <a-menu-item key="knowledge">
+        <template #icon><span style="font-size:16px">📚</span></template>
+        知识库
+      </a-menu-item>
+
+      <a-menu-item key="family">
+        <template #icon><span style="font-size:16px">👨‍👩‍👧</span></template>
+        家庭协作
+      </a-menu-item>
+
+      <a-divider style="margin: 8px 0;" />
+
       <a-menu-item key="profile">
-        <template #icon>
-          <icon-user />
-        </template>
+        <template #icon><icon-user /></template>
         个人中心
       </a-menu-item>
     </a-menu>

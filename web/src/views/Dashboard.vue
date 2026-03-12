@@ -200,21 +200,30 @@ const notifications = ref([
 
 const loadOverview = async () => {
   try {
-    const response = await api.get('/api/statistics/overview');
-    overview.value = response.data;
+    const response = await api.statistics.getOverview();
+    if (response?.data) {
+      const d = response.data;
+      overview.value = {
+        agriculture: { totalCrops: d.agriculture?.totalAnalysis || 0, avgHealthScore: d.agriculture?.avgHealthScore || 0, trend: d.agriculture?.trend || 0 },
+        energy: { totalPredictions: d.energy?.totalRecords || 0, avgSolarPotential: d.energy?.avgGeneration || 0, avgWindPotential: 0, trend: d.energy?.trend || 0 },
+        carbon: { totalEmissions: 0, totalSequestered: d.carbon?.totalSequestered || 0, netCarbon: d.carbon?.totalSequestered || 0, equivalentTrees: d.carbon?.equivalentTrees || 0, trend: d.carbon?.trend || 0 },
+        environment: { totalRecords: 0, avgScore: d.environment?.envScore || 0, avgBiodiversity: d.environment?.biodiversityScore || 0, trend: d.environment?.trend || 0 },
+        community: { totalQuestions: d.wisdom?.totalRecords || 0, activeUsers: 5, trend: d.wisdom?.trend || 0 }
+      };
+    }
   } catch (error) {
-    Message.error('加载概览数据失败');
+    Message.warning('加载概览数据失败，显示示例数据');
   }
 };
 
 const loadTrends = async () => {
   try {
-    const response = await api.get('/api/statistics/trends', {
-      params: { type: trendType.value, period: trendPeriod.value }
-    });
-    trendsData.value = response.data.data;
+    const response = await api.statistics.getTrends({ period: trendPeriod.value });
+    if (response?.data) {
+      trendsData.value = response.data;
+    }
   } catch (error) {
-    Message.error('加载趋势数据失败');
+    Message.warning('加载趋势数据失败');
   }
 };
 

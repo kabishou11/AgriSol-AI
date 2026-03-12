@@ -12,8 +12,8 @@ export default async function statisticsRoutes(fastify) {
       const cropMonth = db.prepare(`SELECT COUNT(*) as total FROM crop_records WHERE user_id = ? AND created_at >= datetime('now', '-30 days')`).get(userId);
 
       // 能源统计
-      const energyTotal = db.prepare(`SELECT SUM(daily_generation) as totalGen, AVG(self_sufficiency) as avgSelf, SUM(revenue) as totalRevenue FROM energy_records WHERE user_id = ?`).get(userId);
-      const energyToday = db.prepare(`SELECT daily_generation, daily_consumption, self_sufficiency, revenue FROM energy_records WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`).get(userId);
+      const energyTotal = db.prepare(`SELECT SUM(generation) as totalGen, AVG(generation) as avgGen, COUNT(*) as total FROM energy_records WHERE user_id = ?`).get(userId);
+      const energyToday = db.prepare(`SELECT generation, consumption, grid_export FROM energy_records WHERE user_id = ? ORDER BY timestamp DESC LIMIT 1`).get(userId);
 
       // 碳汇统计
       const carbonTotal = db.prepare(`SELECT SUM(carbon_sequestered) as totalCarbon, SUM(equivalent_trees) as totalTrees FROM carbon_records WHERE user_id = ?`).get(userId);
@@ -38,11 +38,11 @@ export default async function statisticsRoutes(fastify) {
           },
           energy: {
             totalGeneration: Math.round((energyTotal?.totalGen || 0) * 10) / 10,
-            avgSelfSufficiency: Math.round((energyTotal?.avgSelf || 0) * 10) / 10,
-            totalRevenue: Math.round((energyTotal?.totalRevenue || 0) * 100) / 100,
-            todayGeneration: energyToday?.daily_generation || 0,
-            todayConsumption: energyToday?.daily_consumption || 0,
-            todaySelfSufficiency: energyToday?.self_sufficiency || 0,
+            avgGeneration: Math.round((energyTotal?.avgGen || 0) * 10) / 10,
+            totalRecords: energyTotal?.total || 0,
+            todayGeneration: energyToday?.generation || 0,
+            todayConsumption: energyToday?.consumption || 0,
+            todayExport: energyToday?.grid_export || 0,
             trend: 3.8
           },
           carbon: {
@@ -87,10 +87,11 @@ export default async function statisticsRoutes(fastify) {
 
       // 能源趋势
       const energyTrend = db.prepare(`
-        SELECT created_at as date, daily_generation as generation, daily_consumption as consumption, self_sufficiency as selfSufficiency
+        SELECT DATE(timestamp) as date, SUM(generation) as generation, SUM(consumption) as consumption
         FROM energy_records
-        WHERE user_id = ? AND created_at >= date('now', '-${days} days')
-        ORDER BY created_at
+        WHERE user_id = ? AND timestamp >= date('now', '-${days} days')
+        GROUP BY DATE(timestamp)
+        ORDER BY date
       `).all(userId);
 
       // 碳汇趋势（按月）
@@ -132,7 +133,7 @@ export default async function statisticsRoutes(fastify) {
       const userId = 1;
 
       const cropCount = db.prepare(`SELECT COUNT(*) as total FROM crop_records WHERE user_id = ?`).get(userId);
-      const energyGen = db.prepare(`SELECT SUM(daily_generation) as total FROM energy_records WHERE user_id = ?`).get(userId);
+      const energyGen = db.prepare(`SELECT SUM(generation) as total FROM energy_records WHERE user_id = ?`).get(userId);
       const carbonSeq = db.prepare(`SELECT SUM(carbon_sequestered) as total FROM carbon_records WHERE user_id = ?`).get(userId);
       const wisdomCount = db.prepare(`SELECT COUNT(*) as total FROM wisdom_records WHERE user_id = ?`).get(userId);
 

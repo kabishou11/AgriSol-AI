@@ -1,15 +1,12 @@
 /* Global Styles & Reset - AgriSol-AI */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -19,26 +16,23 @@ body {
   color: var(--color-gray-800);
   background-color: var(--bg-secondary);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+img, video, svg { display: block; max-width: 100%; }
+input, button, textarea, select { font: inherit; }
 
-::-webkit-scrollbar-track {
-  background: var(--color-gray-100);
-}
-
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-gray-100); border-radius: var(--radius-full); }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-gray-400);
+  background: linear-gradient(180deg, var(--color-primary-lighter) 0%, var(--color-primary) 100%);
   border-radius: var(--radius-full);
 }
+::-webkit-scrollbar-thumb:hover { background: var(--color-primary-dark); }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gray-500);
-}
+/* Selection */
+::selection { background-color: rgba(82, 196, 26, 0.2); color: var(--color-primary-darker); }
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
@@ -46,60 +40,101 @@ h1, h2, h3, h4, h5, h6 {
   line-height: var(--line-height-tight);
   color: var(--color-gray-900);
 }
+h1 { font-size: var(--font-size-4xl); margin-bottom: var(--spacing-lg); }
+h2 { font-size: var(--font-size-3xl); margin-bottom: var(--spacing-md); }
+h3 { font-size: var(--font-size-2xl); margin-bottom: var(--spacing-md); }
+h4 { font-size: var(--font-size-xl); margin-bottom: var(--spacing-sm); }
+p  { margin-bottom: var(--spacing-md); font-size: var(--font-size-base); line-height: var(--line-height-relaxed); }
+a  { color: var(--color-primary); text-decoration: none; transition: color var(--transition-fast); }
+a:hover { color: var(--color-primary-dark); }
 
-h1 {
-  font-size: var(--font-size-4xl);
-  margin-bottom: var(--spacing-lg);
+/* Card Hover Effects */
+.card-hover {
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  cursor: pointer;
 }
+.card-hover:hover { transform: translateY(-6px); box-shadow: var(--shadow-xl); }
 
-h2 {
-  font-size: var(--font-size-3xl);
-  margin-bottom: var(--spacing-md);
+.card-hover-3d {
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
 }
-
-h3 {
-  font-size: var(--font-size-2xl);
-  margin-bottom: var(--spacing-md);
-}
-
-h4 {
-  font-size: var(--font-size-xl);
-  margin-bottom: var(--spacing-sm);
-}
-
-p {
-  margin-bottom: var(--spacing-md);
-}
-
-a {
-  color: var(--color-primary);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
-
-a:hover {
-  color: var(--color-primary-dark);
+.card-hover-3d:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(82, 196, 26, 0.15);
 }
 
 /* Utility Classes */
-.container {
-  max-width: var(--container-max-width);
-  margin: 0 auto;
-  padding: 0 var(--spacing-lg);
-}
+.container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 var(--spacing-lg); }
+.text-center  { text-align: center; }
+.text-primary { color: var(--color-primary); }
+.text-muted   { color: var(--color-gray-500); }
+.text-white   { color: #fff; }
+.font-bold    { font-weight: var(--font-weight-bold); }
+.font-medium  { font-weight: var(--font-weight-medium); }
+.flex         { display: flex; }
+.flex-center  { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.flex-col     { display: flex; flex-direction: column; }
+.gap-sm       { gap: var(--spacing-sm); }
+.gap-md       { gap: var(--spacing-md); }
+.gap-lg       { gap: var(--spacing-lg); }
+.w-full  { width: 100%; }
+.rounded-lg { border-radius: var(--radius-lg); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.p-md  { padding: var(--spacing-md); }
+.p-lg  { padding: var(--spacing-lg); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.overflow-hidden { overflow: hidden; }
+.relative { position: relative; }
 
-.text-center {
-  text-align: center;
-}
+/* Gradient Backgrounds */
+.bg-gradient-green  { background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%); }
+.bg-gradient-orange { background: linear-gradient(135deg, var(--color-energy) 0%, var(--color-energy-dark) 100%); }
+.bg-gradient-blue   { background: linear-gradient(135deg, var(--color-environment) 0%, var(--color-environment-dark) 100%); }
+.bg-gradient-purple { background: linear-gradient(135deg, var(--color-community) 0%, var(--color-community-dark) 100%); }
 
-.text-primary {
-  color: var(--color-primary);
+/* Page Header */
+.page-header {
+  margin-bottom: var(--spacing-xl);
 }
-
-.text-muted {
-  color: var(--color-gray-500);
-}
-
-.font-bold {
+.page-header h1 {
+  font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-sm);
+}
+.page-header p {
+  font-size: var(--font-size-base);
+  color: var(--color-gray-500);
+  margin-bottom: 0;
+}
+
+/* Section Headers */
+.section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+.section-title {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-sm);
+}
+.section-desc {
+  font-size: var(--font-size-lg);
+  color: var(--color-gray-500);
+  margin-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .hide-mobile { display: none !important; }
+  h1 { font-size: var(--font-size-3xl); }
+  h2 { font-size: var(--font-size-2xl); }
+  .section-title { font-size: var(--font-size-2xl); }
+}
+@media (min-width: 768px) {
+  .hide-desktop { display: none !important; }
 }

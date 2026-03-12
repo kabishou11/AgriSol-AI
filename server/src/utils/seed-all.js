@@ -29,26 +29,28 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS crop_records (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER DEFAULT 1,
+    image_id INTEGER,
     crop_type TEXT NOT NULL,
-    image_path TEXT,
     health_score REAL,
-    disease_detected TEXT,
-    pest_detected TEXT,
-    ai_analysis TEXT,
+    health_status TEXT,
+    growth_stage TEXT,
+    pests_detected TEXT,
     recommendations TEXT,
+    analysis_data TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS energy_records (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER DEFAULT 1,
-    panel_area REAL DEFAULT 20,
-    daily_generation REAL,
-    daily_consumption REAL,
-    self_sufficiency REAL,
-    revenue REAL,
-    weather_condition TEXT,
-    created_at DATE DEFAULT (date('now'))
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    generation REAL NOT NULL,
+    consumption REAL NOT NULL,
+    grid_import REAL DEFAULT 0,
+    grid_export REAL DEFAULT 0,
+    battery_charge REAL DEFAULT 0,
+    battery_discharge REAL DEFAULT 0,
+    device_type TEXT
   );
 
   CREATE TABLE IF NOT EXISTS carbon_records (
@@ -87,22 +89,27 @@ db.exec(`
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     audio_path TEXT,
+    audio_duration INTEGER,
+    image_paths TEXT,
     category TEXT DEFAULT 'general',
     tags TEXT,
-    likes INTEGER DEFAULT 0,
-    views INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    view_count INTEGER DEFAULT 0,
+    favorite_count INTEGER DEFAULT 0,
+    share_count INTEGER DEFAULT 0,
+    is_featured INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS family_members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER DEFAULT 1,
     name TEXT NOT NULL,
     role TEXT,
     avatar TEXT,
-    phone TEXT,
-    contribution_score INTEGER DEFAULT 0,
-    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    points INTEGER DEFAULT 0,
+    contribution_count INTEGER DEFAULT 0,
+    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_active DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS activity_logs (
@@ -125,7 +132,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_crop_user ON crop_records(user_id);
   CREATE INDEX IF NOT EXISTS idx_crop_date ON crop_records(created_at);
   CREATE INDEX IF NOT EXISTS idx_energy_user ON energy_records(user_id);
-  CREATE INDEX IF NOT EXISTS idx_energy_date ON energy_records(created_at);
+  CREATE INDEX IF NOT EXISTS idx_energy_date ON energy_records(timestamp);
   CREATE INDEX IF NOT EXISTS idx_carbon_user ON carbon_records(user_id);
   CREATE INDEX IF NOT EXISTS idx_wisdom_category ON wisdom_records(category);
   CREATE INDEX IF NOT EXISTS idx_wisdom_date ON wisdom_records(created_at);
@@ -168,10 +175,10 @@ const familyData = [
   { name: '王老汉', role: '父亲', score: 520 }
 ];
 const insertFamily = db.prepare(`
-  INSERT INTO family_members (user_id, name, role, contribution_score)
-  VALUES (1, ?, ?, ?)
+  INSERT INTO family_members (name, role, points, contribution_count)
+  VALUES (?, ?, ?, ?)
 `);
-familyData.forEach(m => insertFamily.run(m.name, m.role, m.score));
+familyData.forEach(m => insertFamily.run(m.name, m.role, m.score, Math.floor(m.score / 50)));
 console.log('✅ 家庭成员创建完成');
 
 // 4. 作物记录（30条，最近30天）
@@ -185,32 +192,34 @@ const analyses = [
   '发现少量害虫，建议采用生物防治方法，避免过度使用化学农药。'
 ];
 const insertCrop = db.prepare(`
-  INSERT INTO crop_records (user_id, crop_type, health_score, disease_detected, pest_detected, ai_analysis, recommendations, created_at)
-  VALUES (1, ?, ?, ?, ?, ?, ?, datetime('now', ? || ' days'))
+  INSERT INTO crop_records (user_id, crop_type, health_score, health_status, growth_stage, pests_detected, recommendations, analysis_data, created_at)
+  VALUES (1, ?, ?, ?, ?, ?, ?, ?, datetime('now', ? || ' days'))
 `);
 for (let i = 0; i < 30; i++) {
   const cropType = cropTypes[Math.floor(Math.random() * cropTypes.length)];
   const healthScore = 60 + Math.random() * 38;
+  const healthStatus = healthScore >= 85 ? '优秀' : healthScore >= 70 ? '良好' : '一般';
   const disease = diseases[Math.floor(Math.random() * diseases.length)];
   const analysis = analyses[Math.floor(Math.random() * analyses.length)];
-  insertCrop.run(cropType, healthScore.toFixed(1), disease, '无', analysis, '定期检查，合理施肥，注意病虫害防治', `-${i}`);
+  insertCrop.run(cropType, healthScore.toFixed(1), healthStatus, '生长期', disease, '定期检查，合理施肥，注意病虫害防治', JSON.stringify({ analysis }), `-${i}`);
 }
 console.log('✅ 作物记录创建完成（30条）');
 
 // 5. 能源记录（30天）
 const weatherConditions = ['晴天', '多云', '阴天', '小雨', '晴天', '晴天', '多云'];
 const insertEnergy = db.prepare(`
-  INSERT INTO energy_records (user_id, panel_area, daily_generation, daily_consumption, self_sufficiency, revenue, weather_condition, created_at)
-  VALUES (1, 20, ?, ?, ?, ?, ?, date('now', ? || ' days'))
+  INSERT INTO energy_records (user_id, generation, consumption, grid_import, grid_export, battery_charge, device_type, timestamp)
+  VALUES (1, ?, ?, ?, ?, ?, 'solar', datetime('now', ? || ' days'))
 `);
 for (let i = 0; i < 30; i++) {
   const weather = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
   const baseGen = weather === '晴天' ? 28 : weather === '多云' ? 18 : weather === '阴天' ? 10 : 5;
   const generation = baseGen + (Math.random() - 0.5) * 6;
   const consumption = 15 + Math.random() * 10;
-  const selfSufficiency = Math.min(100, (generation / consumption) * 100);
-  const revenue = generation * 0.45;
-  insertEnergy.run(generation.toFixed(2), consumption.toFixed(2), selfSufficiency.toFixed(1), revenue.toFixed(2), weather, `-${i}`);
+  const gridImport = Math.max(0, consumption - generation);
+  const gridExport = Math.max(0, generation - consumption);
+  const batteryCharge = Math.min(gridExport * 0.5, 5);
+  insertEnergy.run(generation.toFixed(2), consumption.toFixed(2), gridImport.toFixed(2), gridExport.toFixed(2), batteryCharge.toFixed(2), `-${i}`);
 }
 console.log('✅ 能源记录创建完成（30条）');
 
@@ -269,13 +278,13 @@ const wisdomData = [
   { title: '节气农谚的智慧', content: '"清明前后，种瓜点豆"、"谷雨前后，种花移树"、"立夏不下，犁耙高挂"。这些农谚是几千年农耕文明的结晶，蕴含着深刻的物候规律。虽然现代农业技术发达，但这些传统智慧仍有重要参考价值。', category: '农事历法', tags: '农谚,节气,传统智慧' }
 ];
 const insertWisdom = db.prepare(`
-  INSERT INTO wisdom_records (user_id, title, content, category, tags, likes, views, created_at)
+  INSERT INTO wisdom_records (user_id, title, content, category, tags, favorite_count, view_count, created_at)
   VALUES (1, ?, ?, ?, ?, ?, ?, datetime('now', ? || ' days'))
 `);
 wisdomData.forEach((w, i) => {
-  const likes = Math.floor(Math.random() * 50);
-  const views = likes * 3 + Math.floor(Math.random() * 100);
-  insertWisdom.run(w.title, w.content, w.category, w.tags, likes, views, `-${i * 5}`);
+  const favorites = Math.floor(Math.random() * 50);
+  const views = favorites * 3 + Math.floor(Math.random() * 100);
+  insertWisdom.run(w.title, w.content, w.category, w.tags, favorites, views, `-${i * 5}`);
 });
 console.log('✅ 智慧记录创建完成（15条）');
 

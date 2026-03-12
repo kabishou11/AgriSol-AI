@@ -166,11 +166,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import PageContainer from '../components/common/PageContainer.vue'
 import StatCard from '../components/common/StatCard.vue'
 import DataCard from '../components/common/DataCard.vue'
+import api from '../api'
 
 const router = useRouter()
 
@@ -189,9 +190,46 @@ const recentActivities = ref([
   { icon: '🌾', title: '小麦生长数据采集', time: '3小时前' }
 ])
 
-const navigate = (path) => {
-  router.push(path)
+const loadSummary = async () => {
+  try {
+    const res = await api.statistics.getSummary()
+    if (res?.data?.stats) {
+      const s = res.data.stats
+      stats.value = {
+        cropAnalysis: s.cropAnalysis || stats.value.cropAnalysis,
+        energyPoints: s.totalGeneration || stats.value.energyPoints,
+        carbonReduction: s.carbonReduction || stats.value.carbonReduction,
+        wisdomRecords: s.wisdomRecords || stats.value.wisdomRecords
+      }
+    }
+    if (res?.data?.recentActivities?.length) {
+      recentActivities.value = res.data.recentActivities.map(a => ({
+        icon: getActivityIcon(a.action_type),
+        title: a.action_data || a.action_type,
+        time: formatTime(a.created_at)
+      }))
+    }
+  } catch {}
 }
+
+const getActivityIcon = (type) => {
+  const icons = { crop: '🌾', energy: '⚡', carbon: '🌍', wisdom: '📝', environment: '🌿' }
+  return icons[type] || '📋'
+}
+
+const formatTime = (ts) => {
+  if (!ts) return ''
+  const diff = Date.now() - new Date(ts).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 60) return `${m}分钟前`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}小时前`
+  return `${Math.floor(h / 24)}天前`
+}
+
+const navigate = (path) => router.push(path)
+
+onMounted(loadSummary)
 </script>
 
 <style scoped>

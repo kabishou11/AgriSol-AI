@@ -8,22 +8,28 @@ const api = axios.create({
   }
 })
 
+// 请求拦截器
+api.interceptors.request.use(
+  config => config,
+  error => Promise.reject(error)
+)
+
+// 响应拦截器
 api.interceptors.response.use(
   response => response.data,
   error => {
-    console.error('API Error:', error)
-    return Promise.reject(error)
+    const msg = error.response?.data?.message || error.message || '请求失败'
+    console.error('API Error:', msg)
+    return Promise.reject(new Error(msg))
   }
 )
 
 export default {
   crop: {
-    upload: (formData) => {
-      return axios.post('/api/crops/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 30000
-      })
-    },
+    upload: (formData) => axios.post('/api/crops/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000
+    }).then(r => r.data),
     analyze: (data) => api.post('/crops/analyze', data),
     getHistory: (params) => api.get('/crops/history', { params }),
     getStatistics: () => api.get('/crops/statistics'),
@@ -31,8 +37,6 @@ export default {
     delete: (id) => api.delete(`/crops/${id}`)
   },
   energy: {
-    getMonitoring: () => api.get('/energy/monitoring'),
-    getStats: () => api.get('/energy/stats'),
     record: (data) => api.post('/energy/record', data),
     getToday: () => api.get('/energy/today'),
     getForecast: (params) => api.get('/energy/forecast', { params }),
@@ -46,33 +50,30 @@ export default {
     record: (data) => api.post('/carbon/record', data),
     getLedger: (params) => api.get('/carbon/ledger', { params }),
     getStatistics: (params) => api.get('/carbon/statistics', { params }),
-    getCertificate: (certificateId) => api.get(`/carbon/certificate/${certificateId}`),
+    getCertificate: (id) => api.get(`/carbon/certificate/${id}`),
     getCropTypes: () => api.get('/carbon/crop-types'),
     getReport: () => api.get('/carbon/report')
   },
   environment: {
     record: (data) => api.post('/environment/record', data),
     getIndicators: (params) => api.get('/environment/indicators', { params }),
-    calculateScore: (data) => api.post('/environment/score', data),
     getStatistics: (params) => api.get('/environment/statistics', { params }),
-    getLatest: (params) => api.get('/environment/latest', { params })
+    getLatest: () => api.get('/environment/latest')
   },
   wisdom: {
     create: (data) => api.post('/wisdom/record', data),
-    getList: () => api.get('/wisdom/list'),
-    record: (data) => api.post('/wisdom/record', data),
-    recordAudio: (formData) => {
-      return axios.post('/api/wisdom/record-audio', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 30000
-      })
-    },
+    getList: (params) => api.get('/wisdom/list', { params }),
+    recordAudio: (formData) => axios.post('/api/wisdom/record-audio', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000
+    }).then(r => r.data),
     search: (params) => api.get('/wisdom/search', { params }),
     getCategories: () => api.get('/wisdom/categories'),
-    favorite: (data) => api.post('/wisdom/favorite', data),
-    unfavorite: (data) => api.delete('/wisdom/favorite', { data }),
+    like: (id) => api.post(`/wisdom/${id}/like`),
     getPopular: (params) => api.get('/wisdom/popular', { params }),
-    getDetail: (id) => api.get(`/wisdom/${id}`)
+    getDetail: (id) => api.get(`/wisdom/${id}`),
+    update: (id, data) => api.put(`/wisdom/${id}`, data),
+    delete: (id) => api.delete(`/wisdom/${id}`)
   },
   family: {
     getMembers: () => api.get('/family/members'),
@@ -83,20 +84,17 @@ export default {
     getActivity: (params) => api.get('/family/activity', { params })
   },
   statistics: {
-    getOverview: (params) => api.get('/statistics/overview', { params }),
+    getOverview: () => api.get('/statistics/overview'),
     getTrends: (params) => api.get('/statistics/trends', { params }),
-    getReport: (params) => api.get('/statistics/report', { params }),
-    export: (data) => api.post('/statistics/export', data)
+    getSummary: () => api.get('/statistics/summary'),
+    getActivities: (params) => api.get('/statistics/activities', { params }),
+    recordActivity: (data) => api.post('/statistics/activity', data)
   },
   user: {
-    getProfile: (params) => api.get('/user/profile', { params }),
+    getProfile: () => api.get('/user/profile'),
     updateProfile: (data) => api.put('/user/profile', data),
-    getSettings: (params) => api.get('/user/settings', { params }),
+    getSettings: () => api.get('/user/settings'),
     updateSettings: (data) => api.put('/user/settings', data),
     getHistory: (params) => api.get('/user/history', { params })
-  },
-  get: (url, config) => api.get(url, config),
-  post: (url, data, config) => api.post(url, data, config),
-  put: (url, data, config) => api.put(url, data, config),
-  delete: (url, config) => api.delete(url, config)
+  }
 }
