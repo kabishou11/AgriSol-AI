@@ -1,7 +1,40 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd \"/f/1work/农业能源环境\" && mkdir -p data/uploads models && touch data/uploads/.gitkeep models/.gitkeep)"
+      "Bash(cd \"/f/1work/农业能源环境\" && mkdir -p data/uploads models && touch data/uploads/.gitkeep models/.gitkeep)",
+      "Bash(cd \"F:/1work/农业能源环境\" && ls -lh web/src/views/*.vue 2>&1)",
+      "Bash(cd \"F:/1work/农业能源环境\" && ls -lh server/src/routes/*.js 2>&1)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && npm run seed:all 2>&1)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && npm install 2>&1 | tail -20)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && npm install --ignore-scripts 2>&1 | tail -10)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && npx @mapbox/node-pre-gyp install --directory node_modules/better-sqlite3 2>&1 | tail -15)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node -e \"const b = require\\('better-sqlite3'\\); console.log\\('ok'\\)\" 2>&1)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node --input-type=module <<'EOF'\nimport Database from 'better-sqlite3';\nconsole.log\\('better-sqlite3 ESM ok'\\);\nEOF\n2>&1)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node --experimental-vm-modules src/utils/seed-all.js 2>&1 | head -20)",
+      "Bash(dir \"F:\\\\1work\\\\农业能源环境\\\\server\\\\node_modules\\\\better-sqlite3\" 2>&1)",
+      "Bash(node -e \"console.log\\(require.resolve\\('better-sqlite3'\\)\\)\" 2>&1)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && npm rebuild better-sqlite3 2>&1 | tail -15)",
+      "Bash(where cl.exe 2>&1; where msbuild.exe 2>&1; where cmake.exe 2>&1)",
+      "Bash(dir \"C:\\\\Program Files\\\\Microsoft Visual Studio\" 2>&1; dir \"C:\\\\Program Files \\(x86\\)\\\\Microsoft Visual Studio\" 2>&1)",
+      "Bash(node -e \"const b = require\\('better-sqlite3'\\); const db = new b\\(':memory:'\\); db.exec\\('CREATE TABLE t \\(x\\)'\\); db.prepare\\('INSERT INTO t VALUES \\(?\\)'\\).run\\(1\\); console.log\\(db.prepare\\('SELECT * FROM t'\\).all\\(\\)\\);\" 2>&1)",
+      "Bash(node -e \"require\\('better-sqlite3'\\)\" 2>&1)",
+      "Bash(node -e \"const b = require\\('better-sqlite3'\\); console.log\\(typeof b\\)\" 2>&1)",
+      "Bash(node -e \"const b = require\\('better-sqlite3'\\); const db = new b\\(':memory:'\\); console.log\\('db ok'\\)\" 2>&1)",
+      "Bash(dir \"C:\\\\Program Files \\(x86\\)\\\\Microsoft Visual Studio\\\\2019\" 2>&1; dir \"C:\\\\BuildTools\" 2>&1; dir \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\" 2>&1)",
+      "Bash(npm install:*)",
+      "Bash(node-gyp --version 2>&1; node-gyp configure 2>&1 | head -5)",
+      "Bash(cd \"F:/1work/农业能源环境/server/node_modules/better-sqlite3\" && node-gyp configure 2>&1 | tail -10)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && curl -L \"https://github.com/WiseLibs/better-sqlite3/releases/download/v9.4.0/better-sqlite3-v9.4.0-node-v127-win32-x64.tar.gz\" -o /tmp/bsqlite3.tar.gz 2>&1 | tail -5)",
+      "Bash(node -e \"const { DatabaseSync } = require\\('node-sqlite3-wasm'\\); const db = new DatabaseSync\\(':memory:'\\); db.exec\\('CREATE TABLE t \\(x\\)'\\); db.prepare\\('INSERT INTO t VALUES \\(?\\)'\\).run\\(1\\); console.log\\(db.prepare\\('SELECT * FROM t'\\).all\\(\\)\\);\" 2>&1)",
+      "Bash(node -e \"const db = require\\('node-sqlite3-wasm'\\); console.log\\(Object.keys\\(db\\)\\)\" 2>&1)",
+      "Bash(node -e \"const { DatabaseSync } = require\\('node:sqlite'\\); const db = new DatabaseSync\\(':memory:'\\); db.exec\\('CREATE TABLE t \\(x\\)'\\); db.prepare\\('INSERT INTO t VALUES \\(?\\)'\\).run\\(1\\); console.log\\(db.prepare\\('SELECT * FROM t'\\).all\\(\\)\\);\" 2>&1)",
+      "Bash(node --version 2>&1 && node -e \"const { DatabaseSync } = require\\('node:sqlite'\\); console.log\\('ok'\\)\" 2>&1)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && npm run seed:all 2>&1 | head -30)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && timeout 8 node src/index.js 2>&1 || true)",
+      "Bash(netstat -ano | grep \":3000\" | head -3 2>&1)",
+      "Bash(taskkill /F /PID 43124 2>&1; taskkill /F /PID 34392 2>&1)",
+      "Bash(taskkill //F //PID 43124 2>&1; taskkill //F //PID 34392 2>&1)",
+      "Bash(pkill -f \"node src/index.js\" 2>&1; sleep 1; echo \"Server stopped\" 2>&1)"
     ]
   }
 }

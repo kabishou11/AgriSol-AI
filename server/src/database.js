@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { mkdirSync } from 'fs';
@@ -9,7 +9,7 @@ const dbDir = join(__dirname, '../data');
 
 mkdirSync(dbDir, { recursive: true });
 
-const db = new Database(config.dbPath);
+const db = new DatabaseSync(config.dbPath);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (

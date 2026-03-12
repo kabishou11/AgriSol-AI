@@ -2,7 +2,7 @@
  * AgriSol-AI 完整示例数据生成脚本
  * 运行: node src/utils/seed-all.js
  */
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { mkdirSync } from 'fs';
@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataDir = join(__dirname, '../../data');
 mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(join(dataDir, 'agrisol.db'));
+const db = new DatabaseSync(join(dataDir, 'agrisol.db'));
 
 // 确保表存在
 db.exec(`
