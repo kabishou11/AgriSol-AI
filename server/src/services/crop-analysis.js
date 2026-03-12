@@ -1,12 +1,8 @@
 import sharp from 'sharp'
-import axios from 'axios'
-import fs from 'fs'
-import path from 'path'
+import { analyzeCropImageStructured } from './ai.js'
 
 class CropAnalysisService {
   constructor() {
-    this.modelScopeApiKey = process.env.MODELSCOPE_API_KEY || ''
-    this.modelScopeEndpoint = process.env.MODELSCOPE_ENDPOINT || 'https://api.modelscope.cn/v1/inference'
     this.cache = new Map()
     this.cacheTimeout = 3600000
   }
@@ -22,34 +18,6 @@ class CropAnalysisService {
     } catch (error) {
       console.error('Image preprocessing error:', error)
       throw new Error('图片预处理失败')
-    }
-  }
-
-  async callModelScopeAPI(imageBuffer) {
-    try {
-      const base64Image = imageBuffer.toString('base64')
-
-      const response = await axios.post(
-        this.modelScopeEndpoint,
-        {
-          model: 'crop-disease-detection',
-          input: {
-            image: base64Image
-          }
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.modelScopeApiKey}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 30000
-        }
-      )
-
-      return response.data
-    } catch (error) {
-      console.error('ModelScope API error:', error)
-      return null
     }
   }
 
@@ -126,23 +94,24 @@ class CropAnalysisService {
         imageBuffer = await this.preprocessImage(imagePath)
       }
 
-      const apiResult = await this.callModelScopeAPI(imageBuffer)
+      const base64Image = imageBuffer.toString('base64')
+      const aiResult = await analyzeCropImageStructured(base64Image)
 
       let cropType = '未知作物'
       let pests = []
       let growthStage = '生长期'
 
-      if (apiResult && apiResult.output) {
-        cropType = apiResult.output.crop_type || cropType
-        pests = apiResult.output.diseases || []
-        growthStage = apiResult.output.growth_stage || growthStage
+      if (aiResult && aiResult.cropType) {
+        cropType = aiResult.cropType
+        pests = aiResult.pests || []
+        growthStage = aiResult.growthStage || growthStage
       } else {
         cropType = this.mockCropType()
         pests = this.mockPestDetection()
         growthStage = this.mockGrowthStage()
       }
 
-      const healthScore = this.calculateHealthScore(pests)
+      const healthScore = aiResult?.healthScore || this.calculateHealthScore(pests)
       const healthStatus = this.getHealthStatus(healthScore)
       const recommendations = this.generateRecommendations(cropType, pests, healthScore)
 
