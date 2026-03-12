@@ -62,7 +62,7 @@ export default {
   },
   wisdom: {
     create: (data) => api.post('/wisdom/record', data),
-    getList: (params) => api.get('/wisdom/list', { params }),
+    getList: (params) => api.get('/wisdom/search', { params }),
     recordAudio: (formData) => axios.post('/api/wisdom/record-audio', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000
@@ -70,6 +70,8 @@ export default {
     search: (params) => api.get('/wisdom/search', { params }),
     getCategories: () => api.get('/wisdom/categories'),
     like: (id) => api.post(`/wisdom/${id}/like`),
+    favorite: (data) => api.post('/wisdom/favorite', data),
+    unfavorite: (data) => api.delete('/wisdom/favorite', { data }),
     getPopular: (params) => api.get('/wisdom/popular', { params }),
     getDetail: (id) => api.get(`/wisdom/${id}`),
     update: (id, data) => api.put(`/wisdom/${id}`, data),
