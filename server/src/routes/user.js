@@ -144,7 +144,7 @@ export default async function userRoutes(fastify) {
         { id: 'wisdom_organizer', name: '农事经验整理师', system: '你是农业知识管理专家，擅长将口述农事经验整理成结构化知识，提炼关键技术要点。', active: false },
         { id: 'general', name: '通用农业助手', system: '你是AgriSol-AI农光智助平台的综合AI助手，覆盖农业、能源、碳汇、环境等全领域，为农户提供一站式智慧农业服务。', active: false }
       ];
-      return { prompts, apiKeyConfigured: !!(process.env.OPENAI_API_KEY || process.env.DASHSCOPE_API_KEY) };
+      return { prompts, apiKeyConfigured: !!process.env.MODELSCOPE_API_KEY };
     } catch (error) {
       reply.code(500).send({ error: error.message });
     }

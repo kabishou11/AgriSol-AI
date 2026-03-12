@@ -1,4 +1,5 @@
 import db from '../database.js';
+import { getAgriWisdom } from '../services/ai.js';
 
 // Simple AI chat using rule-based + knowledge base context
 // Falls back gracefully if no OpenAI key configured
@@ -132,38 +133,21 @@ export default async function aiRoutes(fastify) {
     const knowledgeCtx = getKnowledgeContext(message);
     const dataCtx = includeData ? getDataContext() : '';
 
-    // Try OpenAI if configured
-    const apiKey = process.env.OPENAI_API_KEY || process.env.DASHSCOPE_API_KEY;
-    if (apiKey) {
-      try {
-        const { default: OpenAI } = await import('openai');
-        const baseURL = process.env.DASHSCOPE_API_KEY
-          ? 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-          : undefined;
-        const model = process.env.DASHSCOPE_API_KEY ? 'qwen-plus' : 'gpt-3.5-turbo';
+    // Try ModelScope AI (via services/ai.js)
+    try {
+      const fullPrompt = SYSTEM_PROMPT + knowledgeCtx + dataCtx + '\n\n用户问题：' + message;
+      const answer = await getAgriWisdom(fullPrompt);
 
-        const client = new OpenAI({ apiKey, baseURL });
-
-        const messages = [
-          { role: 'system', content: SYSTEM_PROMPT + knowledgeCtx + dataCtx },
-          ...history.slice(-6).map(h => ({ role: h.role, content: h.content })),
-          { role: 'user', content: message }
-        ];
-
-        const completion = await client.chat.completions.create({ model, messages, max_tokens: 800 });
-        const answer = completion.choices[0].message.content;
-
-        // Save to chat history
+      if (answer && answer !== 'Unable to provide answer at this time') {
         try {
           db.prepare(`INSERT INTO activity_logs (user_id, action_type, action_data) VALUES (1, 'ai_chat', ?)`).run(
             JSON.stringify({ question: message.slice(0, 100), answer: answer.slice(0, 200) })
           );
         } catch {}
-
         return { answer, source: 'ai', hasKnowledge: knowledgeCtx.length > 0 };
-      } catch (err) {
-        fastify.log.warn('OpenAI call failed, using rule-based fallback:', err.message);
       }
+    } catch (err) {
+      fastify.log.warn('ModelScope AI call failed, using rule-based fallback:', err.message);
     }
 
     // Rule-based fallback

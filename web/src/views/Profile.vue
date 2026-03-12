@@ -184,7 +184,7 @@
                     <span class="dot"></span>
                     {{ aiConfig.apiKeyConfigured ? 'AI服务已连接' : 'AI服务未配置（使用规则引擎）' }}
                   </div>
-                  <a-tooltip content="在服务器 .env 文件中配置 OPENAI_API_KEY 或 DASHSCOPE_API_KEY">
+                  <a-tooltip content="在服务器 .env 文件中配置 MODELSCOPE_API_KEY">
                     <a-button type="text" size="mini"><icon-info-circle /></a-button>
                   </a-tooltip>
                 </div>
@@ -227,22 +227,17 @@
                 <a-form layout="vertical" style="max-width:480px">
                   <a-form-item label="AI服务商">
                     <a-select v-model="aiModelConfig.provider" @change="saveAiModelConfig">
-                      <a-option value="openai">OpenAI (GPT-3.5/4)</a-option>
-                      <a-option value="dashscope">阿里云百炼 (通义千问)</a-option>
+                      <a-option value="modelscope">ModelScope 魔搭 (通义千问)</a-option>
                       <a-option value="local">本地规则引擎（无需API）</a-option>
                     </a-select>
                   </a-form-item>
                   <a-form-item label="模型">
                     <a-select v-model="aiModelConfig.model" @change="saveAiModelConfig">
-                      <template v-if="aiModelConfig.provider === 'openai'">
-                        <a-option value="gpt-3.5-turbo">GPT-3.5 Turbo（推荐）</a-option>
-                        <a-option value="gpt-4o-mini">GPT-4o Mini</a-option>
-                        <a-option value="gpt-4o">GPT-4o</a-option>
-                      </template>
-                      <template v-else-if="aiModelConfig.provider === 'dashscope'">
-                        <a-option value="qwen-plus">通义千问 Plus（推荐）</a-option>
+                      <template v-if="aiModelConfig.provider === 'modelscope'">
+                        <a-option value="qwen-max">通义千问 Max（推荐）</a-option>
+                        <a-option value="qwen-vl-max">通义千问 VL Max（支持图像）</a-option>
+                        <a-option value="qwen-plus">通义千问 Plus</a-option>
                         <a-option value="qwen-turbo">通义千问 Turbo</a-option>
-                        <a-option value="qwen-max">通义千问 Max</a-option>
                       </template>
                       <template v-else>
                         <a-option value="rule-engine">规则引擎 v1.0</a-option>
@@ -319,7 +314,7 @@ const settings = ref({
 })
 
 const aiConfig = ref({ prompts: [], apiKeyConfigured: false })
-const aiModelConfig = ref({ provider: 'local', model: 'rule-engine', temperature: 0.7, useKnowledgeBase: true })
+const aiModelConfig = ref({ provider: 'modelscope', model: 'qwen-max', temperature: 0.7, useKnowledgeBase: true })
 
 const history = ref([])
 const historyTotal = ref(0)
