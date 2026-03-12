@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"/f/1work/农业能源环境\" && mkdir -p data/uploads models && touch data/uploads/.gitkeep models/.gitkeep)"
+    ]
+  }
+}

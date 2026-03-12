@@ -2,11 +2,26 @@ import db from './database.js';
 import { analyzeCropImage, getAgriWisdom } from './services/ai.js';
 import { getWeatherData, calculateSolarPotential, calculateWindPotential } from './services/weather.js';
 import { calculateCarbonFootprint, calculateCarbonSequestration } from './services/carbon.js';
+import carbonRoutes from './routes/carbon.js';
+import environmentRoutes from './routes/environment.js';
+import energyRoutes from './routes/energy.js';
+import wisdomRoutes from './routes/wisdom.js';
+import familyRoutes from './routes/family.js';
+import cropRoutes from './routes/crop.js';
 import sharp from 'sharp';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
 export default async function routes(fastify) {
+  await mkdir(join(process.cwd(), 'uploads/audio'), { recursive: true });
+  await mkdir(join(process.cwd(), 'uploads/crops'), { recursive: true });
+
+  await fastify.register(carbonRoutes);
+  await fastify.register(environmentRoutes);
+  await fastify.register(energyRoutes);
+  await fastify.register(wisdomRoutes);
+  await fastify.register(familyRoutes);
+  await fastify.register(cropRoutes, { prefix: '/api/crops' });
 
   fastify.post('/api/crops/analyze', async (request, reply) => {
     const data = await request.file();
