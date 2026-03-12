@@ -340,7 +340,8 @@ const handlePageChange = (page) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleDateString('zh-CN')
+  const d = new Date(String(dateStr).replace(' ', 'T'))
+  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('zh-CN')
 }
 
 const initCharts = async () => {

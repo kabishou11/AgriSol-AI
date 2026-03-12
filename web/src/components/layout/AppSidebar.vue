@@ -56,6 +56,11 @@
         知识库
       </a-menu-item>
 
+      <a-menu-item key="graph">
+        <template #icon><span style="font-size:16px">🕸️</span></template>
+        知识图谱
+      </a-menu-item>
+
       <a-menu-item key="family">
         <template #icon><span style="font-size:16px">👨‍👩‍👧</span></template>
         家庭协作

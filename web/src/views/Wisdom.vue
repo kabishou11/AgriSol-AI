@@ -436,11 +436,10 @@ const toggleFavorite = async (record) => {
 }
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  if (!date) return '-'
+  const d = new Date(String(date).replace(' ', 'T'))
+  if (isNaN(d.getTime())) return '-'
+  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 onMounted(() => {

@@ -50,29 +50,34 @@ export default async function familyRoutes(fastify) {
   fastify.get('/api/family/leaderboard', async (request, reply) => {
     const { period = 'all' } = request.query;
 
-    let dateFilter = '';
-    if (period === 'week') {
-      dateFilter = "AND datetime(ph.created_at) >= datetime('now', '-7 days')";
-    } else if (period === 'month') {
-      dateFilter = "AND datetime(ph.created_at) >= datetime('now', '-30 days')";
+    let leaderboard;
+
+    if (period === 'all') {
+      const stmt = db.prepare(`
+        SELECT id, name, role, avatar,
+               points as total_points,
+               contribution_count,
+               points as period_points
+        FROM family_members
+        ORDER BY total_points DESC
+      `);
+      leaderboard = stmt.all();
+    } else {
+      const days = period === 'week' ? 7 : 30;
+      const stmt = db.prepare(`
+        SELECT fm.id, fm.name, fm.role, fm.avatar,
+               fm.points as total_points,
+               fm.contribution_count,
+               COALESCE(SUM(ph.points), 0) as period_points
+        FROM family_members fm
+        LEFT JOIN points_history ph
+          ON fm.id = ph.member_id
+          AND datetime(ph.created_at) >= datetime('now', '-' || ? || ' days')
+        GROUP BY fm.id
+        ORDER BY period_points DESC, total_points DESC
+      `);
+      leaderboard = stmt.all(days);
     }
-
-    const stmt = db.prepare(`
-      SELECT
-        fm.id,
-        fm.name,
-        fm.role,
-        fm.avatar,
-        fm.points as total_points,
-        fm.contribution_count,
-        COALESCE(SUM(CASE WHEN ${dateFilter.replace('AND ', '')} THEN ph.points ELSE 0 END), 0) as period_points
-      FROM family_members fm
-      LEFT JOIN points_history ph ON fm.id = ph.member_id
-      GROUP BY fm.id
-      ORDER BY period_points DESC, total_points DESC
-    `);
-
-    const leaderboard = stmt.all();
 
     return leaderboard;
   });

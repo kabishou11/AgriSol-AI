@@ -410,7 +410,9 @@ const getRatingText = (rating) => {
 }
 
 const formatDate = (dateStr) => {
-  return new Date(dateStr).toLocaleDateString('zh-CN')
+  if (!dateStr) return '-'
+  const d = new Date(String(dateStr).replace(' ', 'T'))
+  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('zh-CN')
 }
 
 onMounted(() => {

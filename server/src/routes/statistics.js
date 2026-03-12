@@ -1,5 +1,18 @@
 import db from '../database.js';
 
+// Normalize SQLite datetime strings to ISO format for frontend compatibility
+const normalizeDate = (str) => str ? String(str).replace(' ', 'T') + (str.includes('T') ? '' : 'Z') : str;
+const normalizeDates = (obj) => {
+  if (!obj || typeof obj !== 'object') return obj;
+  const result = { ...obj };
+  for (const key of Object.keys(result)) {
+    if (typeof result[key] === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(result[key])) {
+      result[key] = result[key].replace(' ', 'T') + 'Z';
+    }
+  }
+  return result;
+};
+
 export default async function statisticsRoutes(fastify) {
 
   // 综合概览数据
@@ -155,7 +168,7 @@ export default async function statisticsRoutes(fastify) {
             carbonReduction: Math.round((carbonSeq?.total || 0) * 10) / 10,
             wisdomRecords: wisdomCount?.total || 0
           },
-          recentActivities
+          recentActivities: recentActivities.map(normalizeDates)
         }
       };
     } catch (error) {

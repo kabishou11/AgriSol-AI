@@ -129,8 +129,8 @@ export default async function wisdomRoutes(fastify) {
     return {
       records: records.map(r => ({
         ...r,
-        tags: JSON.parse(r.tags || '[]'),
-        imagePaths: JSON.parse(r.image_paths || '[]')
+        tags: (() => { try { return JSON.parse(r.tags || '[]'); } catch { return r.tags ? r.tags.split(',').map(t => t.trim()) : []; } })(),
+        imagePaths: (() => { try { return JSON.parse(r.image_paths || '[]'); } catch { return []; } })()
       })),
       total,
       page: parseInt(page),
@@ -209,8 +209,8 @@ export default async function wisdomRoutes(fastify) {
 
     return records.map(r => ({
       ...r,
-      tags: JSON.parse(r.tags || '[]'),
-      imagePaths: JSON.parse(r.image_paths || '[]')
+      tags: (() => { try { return JSON.parse(r.tags || '[]'); } catch { return r.tags ? r.tags.split(',').map(t => t.trim()) : []; } })(),
+      imagePaths: (() => { try { return JSON.parse(r.image_paths || '[]'); } catch { return []; } })()
     }));
   });
 
@@ -234,8 +234,8 @@ export default async function wisdomRoutes(fastify) {
 
     return {
       ...record,
-      tags: JSON.parse(record.tags || '[]'),
-      imagePaths: JSON.parse(record.image_paths || '[]')
+      tags: (() => { try { return JSON.parse(record.tags || '[]'); } catch { return record.tags ? record.tags.split(',').map(t => t.trim()) : []; } })(),
+      imagePaths: (() => { try { return JSON.parse(record.image_paths || '[]'); } catch { return []; } })()
     };
   });
 }

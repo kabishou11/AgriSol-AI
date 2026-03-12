@@ -9,13 +9,14 @@
         :collapsed="collapsed"
         @update:collapsed="collapsed = $event"
       />
-      <a-layout-content class="main-content">
+      <a-layout-content class="main-content" :class="{ 'sidebar-collapsed': collapsed }">
         <AppBreadcrumb />
         <div class="content-wrapper">
           <slot />
         </div>
       </a-layout-content>
     </a-layout>
+    <AiChat />
   </a-layout>
 </template>
 
@@ -24,6 +25,7 @@ import { ref } from 'vue'
 import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
 import AppBreadcrumb from './AppBreadcrumb.vue'
+import AiChat from '../AiChat.vue'
 
 const collapsed = ref(false)
 
@@ -41,6 +43,19 @@ const toggleSidebar = () => {
   background: var(--bg-secondary);
   min-height: calc(100vh - var(--header-height));
   margin-top: var(--header-height);
+  margin-left: 240px;
+  transition: margin-left var(--transition-base);
+}
+
+.main-content.sidebar-collapsed {
+  margin-left: 64px;
+}
+
+@media (max-width: 767px) {
+  .main-content,
+  .main-content.sidebar-collapsed {
+    margin-left: 0;
+  }
 }
 
 .content-wrapper {

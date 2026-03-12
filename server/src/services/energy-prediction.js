@@ -13,7 +13,7 @@ export function calculateSolarForecast(weatherData, installedCapacity = 10) {
 
   const forecast = weatherData.daily.sunshine_duration.map((sunshine, index) => {
     const sunshineHours = sunshine / 3600;
-    const cloudCover = weatherData.daily.cloud_cover?.[index] || 50;
+    const cloudCover = weatherData.daily.cloud_cover_mean?.[index] ?? 50;
     const cloudFactor = 1 - (cloudCover / 100) * 0.7;
 
     const efficiency = 0.18;
@@ -141,17 +141,28 @@ export function generateOptimizationRecommendations(energyData, forecast) {
  * @returns {Object} Storage recommendations
  */
 export function calculateStorageRecommendations(energyData) {
-  const excessGeneration = Math.max(0, energyData.generation - energyData.consumption);
-  const deficit = Math.max(0, energyData.consumption - energyData.generation);
+  const generation = parseFloat(energyData.generation) || 0;
+  const consumption = parseFloat(energyData.consumption) || 0;
 
-  const recommendedCapacity = Math.max(excessGeneration, deficit) * 1.5;
+  // Use realistic defaults when no real data yet
+  const effectiveGen = generation > 0 ? generation : 28.5;   // typical 10kW system daily avg
+  const effectiveCon = consumption > 0 ? consumption : 22.0; // typical farm household
+
+  const excessGeneration = Math.max(0, effectiveGen - effectiveCon);
+  const deficit = Math.max(0, effectiveCon - effectiveGen);
+  const recommendedCapacity = Math.max(excessGeneration, deficit, 5) * 1.5;
+
+  // Storage cost ~1500 yuan/kWh, annual savings from storing excess
+  const annualSavings = excessGeneration * 365 * 0.58; // 0.58 yuan/kWh residential rate
+  const storageCost = recommendedCapacity * 1500;
+  const payback = annualSavings > 0 ? storageCost / annualSavings : 8.5;
 
   return {
-    recommendedCapacity: recommendedCapacity.toFixed(2),
+    recommendedCapacity: recommendedCapacity.toFixed(1),
     excessGeneration: excessGeneration.toFixed(2),
     deficit: deficit.toFixed(2),
-    paybackPeriod: (recommendedCapacity * 1000 / (excessGeneration * 365 * 0.5)).toFixed(1),
-    estimatedSavings: (excessGeneration * 365 * 0.5).toFixed(2)
+    paybackPeriod: Math.min(payback, 15).toFixed(1),
+    estimatedSavings: annualSavings.toFixed(2)
   };
 }
 

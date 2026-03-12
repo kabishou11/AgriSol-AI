@@ -4,6 +4,8 @@ import energyRoutes from './routes/energy.js';
 import wisdomRoutes from './routes/wisdom.js';
 import familyRoutes from './routes/family.js';
 import cropRoutes from './routes/crop.js';
+import aiRoutes from './routes/ai.js';
+import graphRoutes from './routes/graph.js';
 import { mkdir } from 'fs/promises';
 import { join } from 'path';
 
@@ -17,4 +19,6 @@ export default async function routes(fastify) {
   await fastify.register(wisdomRoutes);
   await fastify.register(familyRoutes);
   await fastify.register(cropRoutes, { prefix: '/api/crops' });
+  await fastify.register(aiRoutes);
+  await fastify.register(graphRoutes);
 }

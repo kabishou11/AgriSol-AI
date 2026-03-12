@@ -98,5 +98,13 @@ export default {
     getSettings: () => api.get('/user/settings'),
     updateSettings: (data) => api.put('/user/settings', data),
     getHistory: (params) => api.get('/user/history', { params })
+  },
+  ai: {
+    chat: (data) => api.post('/ai/chat', data),
+    getSuggestions: () => api.get('/ai/suggestions')
+  },
+  graph: {
+    getKnowledge: () => api.get('/graph/knowledge'),
+    getNodeDetail: (type, id) => api.get(`/graph/node/${type}/${id}`)
   }
 }

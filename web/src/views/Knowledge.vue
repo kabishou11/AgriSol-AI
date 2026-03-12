@@ -3,6 +3,9 @@
     <div class="page-header">
       <h1>知识库</h1>
       <p class="subtitle">探索和学习农事智慧</p>
+      <a-button type="outline" @click="$router.push('/graph')" style="margin-top: 12px">
+        🕸️ 查看知识图谱
+      </a-button>
     </div>
 
     <a-card :bordered="false" class="search-card">
@@ -390,11 +393,10 @@ const searchByTag = (tag) => {
 }
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  if (!date) return '-'
+  const d = new Date(String(date).replace(' ', 'T'))
+  if (isNaN(d.getTime())) return '-'
+  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 onMounted(() => {
