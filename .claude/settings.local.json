@@ -97,7 +97,12 @@
       "Bash(echo \"=== Crop History ===\" && curl -s http://localhost:3010/api/crops/history?limit=1 | python -m json.tool 2>&1 | grep -E \"createdAt|date\" && echo -e \"\\\\n=== Statistics ===\" && curl -s http://localhost:3010/api/crops/statistics | python -m json.tool 2>&1 | grep -E \"date|Date\" | head -5)",
       "Bash(curl -s http://localhost:3010/api/carbon/statistics 2>&1)",
       "Bash(curl -s http://localhost:3010/api/carbon/ledger 2>&1 | python -m json.tool 2>&1 | head -50)",
-      "Bash(curl -s http://localhost:3010/api/carbon/statistics | python -m json.tool 2>&1)"
+      "Bash(curl -s http://localhost:3010/api/carbon/statistics | python -m json.tool 2>&1)",
+      "Bash(curl -s http://localhost:3010/api/energy/today 2>&1 | python -m json.tool 2>&1 | head -30)",
+      "Bash(curl -s http://localhost:3010/api/energy/history 2>&1 | python -m json.tool 2>&1 | head -30)",
+      "Bash(curl -s http://localhost:3010/api/energy/statistics 2>&1 | python -m json.tool 2>&1 | head -80)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node --input-type=module << 'EOF'\nimport db from './src/database.js'\n\nconst records = db.prepare\\('SELECT * FROM energy_records ORDER BY timestamp DESC LIMIT 3'\\).all\\(\\)\nconsole.log\\('Energy records:', JSON.stringify\\(records, null, 2\\)\\)\nEOF)",
+      "Bash(curl -s \"http://localhost:3010/api/energy/statistics?period=week\" 2>&1 | grep -o '\"date\":\"[^\"]*\"' | head -5)"
     ]
   }
 }
