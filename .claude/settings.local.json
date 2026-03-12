@@ -75,7 +75,14 @@
       "Bash(taskkill //F //PID 44688 2>&1 && sleep 2 && echo \"Server stopped\")",
       "Bash(ps aux:*)",
       "Bash(taskkill //F //PID 50416 2>&1 && sleep 2)",
-      "Bash(sleep 3 && netstat -ano | grep \":3010\" | grep LISTENING)"
+      "Bash(sleep 3 && netstat -ano | grep \":3010\" | grep LISTENING)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node --input-type=module << 'EOF'\nimport db from './src/database.js'\n\nconsole.log\\('=== Checking crop_records table ==='\\)\nconst records = db.prepare\\('SELECT * FROM crop_records ORDER BY created_at DESC LIMIT 5'\\).all\\(\\)\nconsole.log\\('Total records:', db.prepare\\('SELECT COUNT\\(*\\) as count FROM crop_records'\\).get\\(\\).count\\)\nconsole.log\\('Recent records:', JSON.stringify\\(records, null, 2\\)\\)\n\nconsole.log\\('\\\\n=== Checking crop_images table ==='\\)\nconst images = db.prepare\\('SELECT * FROM crop_images ORDER BY created_at DESC LIMIT 5'\\).all\\(\\)\nconsole.log\\('Total images:', db.prepare\\('SELECT COUNT\\(*\\) as count FROM crop_images'\\).get\\(\\).count\\)\nconsole.log\\('Recent images:', JSON.stringify\\(images, null, 2\\)\\)\nEOF)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node --input-type=module << 'EOF'\nimport db from './src/database.js'\n\nconsole.log\\('=== crop_images schema ==='\\)\nconst schema = db.prepare\\(\"SELECT sql FROM sqlite_master WHERE type='table' AND name='crop_images'\"\\).get\\(\\)\nconsole.log\\(schema.sql\\)\nEOF)",
+      "Bash(curl -s http://localhost:3010/api/crops/history?limit=3 | head -50)",
+      "Bash(netstat -ano)",
+      "Bash(xargs -I {} taskkill //F //PID {})",
+      "Bash(sleep 3 && curl -s http://localhost:3010/api/crops/history?limit=2 2>&1)",
+      "Bash(curl -s http://localhost:3010/api/crops/statistics 2>&1)"
     ]
   }
 }

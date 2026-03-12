@@ -138,7 +138,8 @@ export default async function cropRoutes(fastify, options) {
 
   fastify.get('/history', async (request, reply) => {
     try {
-      const { page = 1, pageSize = 10, cropType, startDate, endDate } = request.query
+      const { page = 1, pageSize = 10, limit, cropType, startDate, endDate } = request.query
+      const actualLimit = limit || pageSize
 
       let query = `
         SELECT
@@ -166,24 +167,27 @@ export default async function cropRoutes(fastify, options) {
       }
 
       query += ' ORDER BY cr.created_at DESC LIMIT ? OFFSET ?'
-      params.push(parseInt(pageSize), (parseInt(page) - 1) * parseInt(pageSize))
+      params.push(parseInt(actualLimit), (parseInt(page) - 1) * parseInt(actualLimit))
 
       const records = db.prepare(query).all(...params)
+
+      // 格式化返回数据，匹配前端期望的字段名
+      const formattedRecords = records.map(record => ({
+        id: record.id,
+        cropType: record.crop_type,
+        healthScore: record.health_score,
+        healthStatus: record.health_status,
+        growthStage: record.growth_stage,
+        imageUrl: record.image_path,
+        createdAt: record.created_at ? record.created_at.replace(' ', 'T') : null,
+        date: record.created_at ? new Date(record.created_at.replace(' ', 'T')).toLocaleDateString('zh-CN') : ''
+      }))
 
       const countQuery = `SELECT COUNT(*) as total FROM crop_records WHERE 1=1`
       const { total } = db.prepare(countQuery).get()
 
-      return {
-        success: true,
-        data: {
-          records,
-          pagination: {
-            page: parseInt(page),
-            pageSize: parseInt(pageSize),
-            total
-          }
-        }
-      }
+      // 前端期望 res.data 直接是数组
+      return formattedRecords
     } catch (error) {
       fastify.log.error(error)
       return reply.code(500).send({ error: '获取历史记录失败' })
@@ -192,9 +196,23 @@ export default async function cropRoutes(fastify, options) {
 
   fastify.get('/statistics', async (request, reply) => {
     try {
+      const totalAnalysis = db.prepare('SELECT COUNT(*) as count FROM crop_records').get().count
+      const avgHealth = Math.round(db.prepare('SELECT AVG(health_score) as avg FROM crop_records').get().avg || 0)
+
+      // 计算本月新增
+      const monthlyNew = db.prepare(`
+        SELECT COUNT(*) as count
+        FROM crop_records
+        WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
+      `).get().count
+
       const stats = {
-        totalAnalysis: db.prepare('SELECT COUNT(*) as count FROM crop_records').get().count,
-        avgHealthScore: db.prepare('SELECT AVG(health_score) as avg FROM crop_records').get().avg || 0,
+        totalAnalysis,
+        avgHealth,
+        monthlyNew,
+        averageScore: avgHealth,
+        total: totalAnalysis,
+        thisMonth: monthlyNew,
         cropTypes: db.prepare(`
           SELECT crop_type, COUNT(*) as count
           FROM crop_records
@@ -214,7 +232,8 @@ export default async function cropRoutes(fastify, options) {
 
       return {
         success: true,
-        data: stats
+        data: stats,
+        ...stats
       }
     } catch (error) {
       fastify.log.error(error)
