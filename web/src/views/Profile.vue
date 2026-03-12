@@ -234,10 +234,11 @@
                   <a-form-item label="模型">
                     <a-select v-model="aiModelConfig.model" @change="saveAiModelConfig">
                       <template v-if="aiModelConfig.provider === 'modelscope'">
-                        <a-option value="qwen-max">通义千问 Max（推荐）</a-option>
-                        <a-option value="qwen-vl-max">通义千问 VL Max（支持图像）</a-option>
-                        <a-option value="qwen-plus">通义千问 Plus</a-option>
-                        <a-option value="qwen-turbo">通义千问 Turbo</a-option>
+                        <a-option value="Qwen/Qwen3.5-122B-A10B">Qwen3.5-122B（推荐，支持多模态）</a-option>
+                        <a-option value="Qwen/Qwen3.5-35B-A3B">Qwen3.5-35B（高性能）</a-option>
+                        <a-option value="Qwen/Qwen3-32B">Qwen3-32B（均衡）</a-option>
+                        <a-option value="Qwen/Qwen3-8B">Qwen3-8B（快速）</a-option>
+                        <a-option value="Qwen/QwQ-32B">QwQ-32B（深度推理）</a-option>
                       </template>
                       <template v-else>
                         <a-option value="rule-engine">规则引擎 v1.0</a-option>
@@ -314,7 +315,7 @@ const settings = ref({
 })
 
 const aiConfig = ref({ prompts: [], apiKeyConfigured: false })
-const aiModelConfig = ref({ provider: 'modelscope', model: 'qwen-max', temperature: 0.7, useKnowledgeBase: true })
+const aiModelConfig = ref({ provider: 'modelscope', model: 'Qwen/Qwen3.5-122B-A10B', temperature: 0.7, useKnowledgeBase: true })
 
 const history = ref([])
 const historyTotal = ref(0)
