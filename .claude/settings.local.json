@@ -102,7 +102,10 @@
       "Bash(curl -s http://localhost:3010/api/energy/history 2>&1 | python -m json.tool 2>&1 | head -30)",
       "Bash(curl -s http://localhost:3010/api/energy/statistics 2>&1 | python -m json.tool 2>&1 | head -80)",
       "Bash(cd \"F:/1work/农业能源环境/server\" && node --input-type=module << 'EOF'\nimport db from './src/database.js'\n\nconst records = db.prepare\\('SELECT * FROM energy_records ORDER BY timestamp DESC LIMIT 3'\\).all\\(\\)\nconsole.log\\('Energy records:', JSON.stringify\\(records, null, 2\\)\\)\nEOF)",
-      "Bash(curl -s \"http://localhost:3010/api/energy/statistics?period=week\" 2>&1 | grep -o '\"date\":\"[^\"]*\"' | head -5)"
+      "Bash(curl -s \"http://localhost:3010/api/energy/statistics?period=week\" 2>&1 | grep -o '\"date\":\"[^\"]*\"' | head -5)",
+      "Bash(curl -s http://localhost:3010/api/energy/today 2>&1)",
+      "Bash(sleep 3 && curl -s http://localhost:3010/api/energy/today 2>&1)",
+      "Bash(sleep 4 && curl -s http://localhost:3010/api/energy/today 2>&1)"
     ]
   }
 }

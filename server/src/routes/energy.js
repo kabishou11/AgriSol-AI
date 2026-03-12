@@ -71,7 +71,7 @@ export default async function energyRoutes(fastify) {
       const todayData = stmt.get();
 
       const selfSufficiency = todayData.total_generation > 0
-        ? ((todayData.total_generation / todayData.total_consumption) * 100).toFixed(2)
+        ? Number(((todayData.total_generation / todayData.total_consumption) * 100).toFixed(2))
         : 0;
 
       const revenue = calculateRevenue(
@@ -80,12 +80,12 @@ export default async function energyRoutes(fastify) {
       );
 
       return {
-        generation: (todayData.total_generation || 0).toFixed(2),
-        consumption: (todayData.total_consumption || 0).toFixed(2),
-        gridImport: (todayData.total_import || 0).toFixed(2),
-        gridExport: (todayData.total_export || 0).toFixed(2),
+        generation: Number((todayData.total_generation || 0).toFixed(2)),
+        consumption: Number((todayData.total_consumption || 0).toFixed(2)),
+        gridImport: Number((todayData.total_import || 0).toFixed(2)),
+        gridExport: Number((todayData.total_export || 0).toFixed(2)),
         selfSufficiency,
-        savings: revenue.netSavings,
+        savings: typeof revenue.netSavings === 'number' ? Number(revenue.netSavings.toFixed(2)) : Number(revenue.netSavings),
         timestamp: new Date().toISOString()
       };
     } catch (error) {
