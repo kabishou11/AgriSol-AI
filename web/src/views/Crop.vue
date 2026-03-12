@@ -687,9 +687,6 @@ onMounted(() => {
 .step-dot.completed .step-icon {
   filter: grayscale(0%);
 }
-  margin: 8px 0 0;
-  text-align: center;
-}
 
 /* 结果卡片 */
 .result-card {
