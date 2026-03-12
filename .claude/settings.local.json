@@ -64,7 +64,18 @@
       "Bash(git commit:*)",
       "Bash(cd \"F:/1work/农业能源环境/server\" && ls -la .env* 2>&1)",
       "Bash(cd \"F:/1work/农业能源环境/server\" && rm -f .env && echo \"Removed server/.env\")",
-      "Bash(cd \"F:/1work/农业能源环境/server\" && node -e \"import\\('./src/config.js'\\).then\\(m => console.log\\('API Key loaded:', m.default.modelScopeApiKey ? 'YES \\(length: ' + m.default.modelScopeApiKey.length + '\\)' : 'NO'\\)\\)\")"
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node -e \"import\\('./src/config.js'\\).then\\(m => console.log\\('API Key loaded:', m.default.modelScopeApiKey ? 'YES \\(length: ' + m.default.modelScopeApiKey.length + '\\)' : 'NO'\\)\\)\")",
+      "Bash(pkill -f \"node.*src/index.js\" 2>&1; sleep 2; echo \"Server stopped\")",
+      "Bash(netstat -ano | grep \":3010\" | head -5)",
+      "Bash(taskkill /F /PID 41616 2>&1)",
+      "Bash(taskkill //F //PID 41616 2>&1)",
+      "Bash(sleep 3 && curl -s http://localhost:3010/api/health 2>&1 | head -5)",
+      "Bash(netstat -ano | grep \":3010\" | grep LISTENING)",
+      "Bash(cd \"F:/1work/农业能源环境/server\" && node --input-type=module << 'EOF'\nimport config from './src/config.js'\nconsole.log\\('API Key:', config.modelScopeApiKey ? `已配置 \\(${config.modelScopeApiKey.length}字符\\)` : '未配置'\\)\nconsole.log\\('Key value:', config.modelScopeApiKey\\)\nEOF)",
+      "Bash(taskkill //F //PID 44688 2>&1 && sleep 2 && echo \"Server stopped\")",
+      "Bash(ps aux:*)",
+      "Bash(taskkill //F //PID 50416 2>&1 && sleep 2)",
+      "Bash(sleep 3 && netstat -ano | grep \":3010\" | grep LISTENING)"
     ]
   }
 }

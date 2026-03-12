@@ -42,6 +42,11 @@ export default async function cropRoutes(fastify, options) {
       const imageUrl = `/uploads/crops/${filename}`
       const stats = fs.statSync(filepath)
 
+      // 获取表单字段
+      const fields = data.fields || {}
+      const userNote = fields.note?.value || ''
+      const cropType = fields.cropType?.value || ''
+
       const stmt = db.prepare(`
         INSERT INTO crop_images (filename, path, size, mimetype)
         VALUES (?, ?, ?, ?)
@@ -49,9 +54,10 @@ export default async function cropRoutes(fastify, options) {
       const result = stmt.run(filename, imageUrl, stats.size, data.mimetype)
       const imageId = result.lastInsertRowid
 
-      // 自动进行AI分析
+      // 自动进行AI分析，传递用户说明
       console.log('[Upload] Starting AI analysis for:', filename)
-      const analysisResult = await cropAnalysisService.analyzeImage(filepath)
+      console.log('[Upload] User note:', userNote || '(none)')
+      const analysisResult = await cropAnalysisService.analyzeImage(filepath, userNote)
       console.log('[Upload] AI analysis completed:', analysisResult.cropType)
 
       // 保存分析结果到数据库

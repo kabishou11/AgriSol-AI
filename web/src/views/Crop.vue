@@ -97,8 +97,29 @@
               </a-button>
             </div>
             <div v-if="analyzing" class="progress-section">
-              <a-progress :percent="progress" :color="'#52c41a'" />
-              <p class="progress-text">{{ progressText }}</p>
+              <div class="progress-wrapper">
+                <div class="progress-header">
+                  <span class="progress-icon">{{ progressIcon }}</span>
+                  <span class="progress-label">{{ progressText }}</span>
+                  <span class="progress-percent">{{ Math.round(progress) }}%</span>
+                </div>
+                <a-progress
+                  :percent="progress"
+                  :color="progressColor"
+                  :stroke-width="8"
+                  :show-text="false"
+                />
+                <div class="progress-steps">
+                  <div
+                    v-for="(step, idx) in progressSteps"
+                    :key="idx"
+                    class="step-dot"
+                    :class="{ active: progress >= step.percent, completed: progress > step.percent }"
+                  >
+                    <span class="step-icon">{{ step.icon }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </a-col>
@@ -111,6 +132,15 @@
         <span>📊 分析结果</span>
         <a-tag color="green" style="margin-left: 12px">分析完成</a-tag>
       </template>
+
+      <!-- AI总结 -->
+      <div v-if="analysisResult.summary" class="summary-section">
+        <div class="summary-content">
+          <span class="summary-icon">🌱</span>
+          <p class="summary-text">{{ analysisResult.summary }}</p>
+        </div>
+      </div>
+
       <a-row :gutter="24">
         <a-col :span="24" :md="8">
           <div class="score-section">
@@ -177,9 +207,13 @@
           </div>
         </a-col>
       </a-row>
-      <div v-if="analysisResult.aiAnalysis" class="ai-analysis">
-        <p class="section-title">🤖 AI综合分析</p>
-        <a-alert :message="analysisResult.aiAnalysis" type="info" show-icon />
+
+      <!-- 详细分析报告 -->
+      <div v-if="analysisResult.detailedAnalysis" class="detailed-analysis">
+        <p class="section-title">📋 详细分析报告</p>
+        <div class="analysis-content">
+          {{ analysisResult.detailedAnalysis }}
+        </div>
       </div>
     </a-card>
 
@@ -239,9 +273,19 @@ const isDragOver = ref(false)
 const analyzing = ref(false)
 const progress = ref(0)
 const progressText = ref('')
+const progressIcon = ref('📤')
+const progressColor = ref('#165dff')
 const analysisResult = ref(null)
 const historyList = ref([])
 const historyLoading = ref(false)
+
+const progressSteps = [
+  { percent: 0, icon: '📤', text: '上传图片' },
+  { percent: 25, icon: '🔄', text: '预处理' },
+  { percent: 50, icon: '🤖', text: 'AI分析' },
+  { percent: 75, icon: '📊', text: '生成报告' },
+  { percent: 100, icon: '✅', text: '完成' }
+]
 
 const statistics = reactive({
   totalAnalysis: 0,
@@ -303,20 +347,27 @@ const startAnalysis = async () => {
   progress.value = 0
   analysisResult.value = null
 
-  const steps = [
-    { percent: 20, text: '正在上传图片...' },
-    { percent: 45, text: '图像预处理中...' },
-    { percent: 70, text: 'AI模型分析中...' },
-    { percent: 90, text: '生成分析报告...' }
+  // 进度动画：模拟前3个阶段，等待真实响应
+  const phases = [
+    { target: 15, icon: '📤', text: '正在上传图片...', color: '#165dff' },
+    { target: 35, icon: '🔄', text: '图像预处理中...', color: '#722ed1' },
+    { target: 60, icon: '🤖', text: 'AI模型分析中...', color: '#f77234' },
+    { target: 85, icon: '📊', text: '生成分析报告...', color: '#0fc6c2' }
   ]
 
+  let phaseIdx = 0
   const timer = setInterval(() => {
-    const next = steps.find(s => s.percent > progress.value)
-    if (next) {
-      progress.value = next.percent
-      progressText.value = next.text
+    const phase = phases[phaseIdx]
+    if (!phase) return
+    if (progress.value < phase.target) {
+      progress.value = Math.min(progress.value + 2, phase.target)
+      progressText.value = phase.text
+      progressIcon.value = phase.icon
+      progressColor.value = phase.color
+    } else if (phaseIdx < phases.length - 1) {
+      phaseIdx++
     }
-  }, 700)
+  }, 150)
 
   try {
     const formData = new FormData()
@@ -328,6 +379,8 @@ const startAnalysis = async () => {
     clearInterval(timer)
     progress.value = 100
     progressText.value = '分析完成！'
+    progressIcon.value = '✅'
+    progressColor.value = '#00b42a'
 
     analysisResult.value = {
       cropType: res.cropType || selectedCropType.value || '未知作物',
@@ -336,7 +389,8 @@ const startAnalysis = async () => {
       healthScore: res.healthScore ?? 85,
       pests: res.pests || [],
       recommendations: res.recommendations || ['保持适当水分', '定期检查病虫害', '合理施肥'],
-      aiAnalysis: res.aiAnalysis || ''
+      summary: res.summary || '',
+      detailedAnalysis: res.detailedAnalysis || ''
     }
 
     Message.success('分析完成！')
@@ -567,11 +621,72 @@ onMounted(() => {
   border-color: #73d13d;
 }
 .progress-section {
-  margin-top: 8px;
+  margin-top: 16px;
 }
-.progress-text {
-  font-size: 13px;
-  color: #52c41a;
+.progress-wrapper {
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e5e6eb;
+}
+.progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.progress-icon {
+  font-size: 24px;
+  animation: bounce 1s infinite;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.progress-label {
+  flex: 1;
+  margin: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d2129;
+}
+.progress-percent {
+  font-size: 16px;
+  font-weight: 600;
+  color: #165dff;
+}
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding: 0 4px;
+}
+.step-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f2f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  position: relative;
+}
+.step-dot.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transform: scale(1.1);
+}
+.step-dot.completed {
+  background: #00b42a;
+}
+.step-icon {
+  font-size: 20px;
+  filter: grayscale(100%);
+}
+.step-dot.active .step-icon,
+.step-dot.completed .step-icon {
+  filter: grayscale(0%);
+}
   margin: 8px 0 0;
   text-align: center;
 }
@@ -637,6 +752,43 @@ onMounted(() => {
   font-size: 14px;
   color: #4e5969;
   line-height: 1.6;
+}
+.summary-section {
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  border-left: 4px solid #52c41a;
+}
+.summary-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.summary-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.summary-text {
+  margin: 0;
+  font-size: 15px;
+  color: #2d6a4f;
+  line-height: 1.7;
+  font-weight: 500;
+}
+.detailed-analysis {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+.analysis-content {
+  background: #f7f8fa;
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-size: 14px;
+  color: #4e5969;
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
 .ai-analysis {
   margin-top: 20px;
