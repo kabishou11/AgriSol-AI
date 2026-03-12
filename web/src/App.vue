@@ -5,11 +5,13 @@
         <component :is="Component" />
       </transition>
     </router-view>
+    <GlobalAiAssistant />
   </AppLayout>
 </template>
 
 <script setup>
 import AppLayout from './components/layout/AppLayout.vue'
+import GlobalAiAssistant from './components/GlobalAiAssistant.vue'
 </script>
 
 <style>

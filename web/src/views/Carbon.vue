@@ -308,9 +308,10 @@ const loadStatistics = async () => {
   try {
     const res = await apiService.carbon.getStatistics()
     const data = res.data || res
-    statistics.totalCarbon = Number(data.totalCarbon || data.total_carbon || 0).toFixed(2)
-    statistics.totalTrees = data.totalTrees || data.total_trees || 0
-    statistics.monthlyCarbon = Number(data.monthlyCarbon || data.monthly_carbon || 0).toFixed(2)
+    const totals = data.totals || data
+    statistics.totalCarbon = Number(totals.totalCarbon || totals.total_carbon || 0)
+    statistics.totalTrees = totals.totalTrees || totals.total_trees || 0
+    statistics.monthlyCarbon = Number(totals.monthlyCarbon || totals.monthly_carbon || 0)
   } catch {
     // 静默失败
   }
