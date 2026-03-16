@@ -365,106 +365,124 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard-container {
-  padding: 20px;
-  background: #f7f8fa;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
   min-height: 100vh;
 }
 
 .briefing-card {
-  margin-bottom: 16px;
-  border-radius: 12px;
+  margin-bottom: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
 }
 
 .briefing-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 10px;
 }
 
 .insight-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
 }
 
 .insight-card {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border-left: 4px solid transparent;
-  transition: all 0.2s;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border-left: 5px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .insight-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .insight-card.success {
-  background: #f0fff4;
-  border-left-color: #00b42a;
+  background: linear-gradient(135deg, #f0fff4 0%, #e6f9ed 100%);
+  border-left-color: #52c41a;
 }
 
 .insight-card.warning {
-  background: #fffbf0;
-  border-left-color: #ff7d00;
+  background: linear-gradient(135deg, #fffbf0 0%, #fff4e6 100%);
+  border-left-color: #ff9500;
 }
 
 .insight-card.danger {
-  background: #fff1f0;
-  border-left-color: #f53f3f;
+  background: linear-gradient(135deg, #fff1f0 0%, #ffe8e6 100%);
+  border-left-color: #ff4d4f;
 }
 
 .insight-card.info {
-  background: #f2f3ff;
-  border-left-color: #165dff;
+  background: linear-gradient(135deg, #f2f3ff 0%, #e8eaff 100%);
+  border-left-color: #1890ff;
 }
 
 .insight-card-icon {
-  font-size: 24px;
+  font-size: 28px;
   margin-top: 2px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .insight-card-body {
   flex: 1;
-  padding-right: 80px;
+  padding-right: 90px;
   min-width: 0;
 }
 
 .insight-card-title {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1d2129;
+  letter-spacing: -0.01em;
 }
 
 .insight-card-desc {
-  font-size: 13px;
+  font-size: 14px;
   color: #4e5969;
-  line-height: 1.6;
+  line-height: 1.7;
   word-wrap: break-word;
   word-break: break-word;
+  letter-spacing: 0.01em;
 }
 
 .insight-action {
   position: absolute;
-  right: 12px;
-  bottom: 8px;
-  color: #165dff;
+  right: 16px;
+  bottom: 12px;
+  color: #1890ff;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.insight-action:hover {
+  color: #40a9ff;
+  transform: translateX(2px);
 }
 
 .insight-loading {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
 }
 
 .insight-skeleton {
-  height: 90px;
-  border-radius: 12px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
+  height: 110px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -475,55 +493,125 @@ onMounted(async () => {
 }
 
 .metrics-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .metric-card {
   text-align: center;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+  overflow: hidden;
+  position: relative;
 }
 
-.metric-card.agriculture { border-left: 4px solid #00b42a; }
-.metric-card.energy { border-left: 4px solid #ff7d00; }
-.metric-card.carbon { border-left: 4px solid #165dff; }
-.metric-card.environment { border-left: 4px solid #722ed1; }
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  opacity: 0.3;
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.metric-card.agriculture {
+  border-left: 5px solid #52c41a;
+  background: linear-gradient(135deg, #ffffff 0%, #f6ffed 100%);
+}
+
+.metric-card.agriculture::before { color: #52c41a; }
+
+.metric-card.energy {
+  border-left: 5px solid #ff9500;
+  background: linear-gradient(135deg, #ffffff 0%, #fff7e6 100%);
+}
+
+.metric-card.energy::before { color: #ff9500; }
+
+.metric-card.carbon {
+  border-left: 5px solid #1890ff;
+  background: linear-gradient(135deg, #ffffff 0%, #e6f7ff 100%);
+}
+
+.metric-card.carbon::before { color: #1890ff; }
+
+.metric-card.environment {
+  border-left: 5px solid #722ed1;
+  background: linear-gradient(135deg, #ffffff 0%, #f9f0ff 100%);
+}
+
+.metric-card.environment::before { color: #722ed1; }
 
 .trend {
-  margin-top: 8px;
-  color: #f53f3f;
+  margin-top: 10px;
+  color: #ff4d4f;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .trend.positive {
-  color: #00b42a;
+  color: #52c41a;
 }
 
 .subtitle {
-  margin-top: 4px;
-  font-size: 12px;
+  margin-top: 8px;
+  font-size: 13px;
   color: #86909c;
+  font-weight: 400;
 }
 
 .charts-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.charts-row :deep(.arco-card) {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.quick-actions {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .quick-actions :deep(.arco-btn) {
   justify-content: flex-start;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.quick-actions :deep(.arco-btn:hover) {
+  transform: translateX(4px);
 }
 
 .activity-item {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
+  padding: 8px 0;
 }
 
 .activity-title {
-  font-size: 13px;
+  font-size: 14px;
   color: #1d2129;
+  font-weight: 500;
 }
 
 .activity-time {
   font-size: 12px;
   color: #86909c;
+  white-space: nowrap;
 }
 </style>
