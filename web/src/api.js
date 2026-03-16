@@ -36,6 +36,7 @@ export default {
     getHistory: (params) => api.get('/crops/history', { params }).then(unwrapData),
     getStatistics: () => api.get('/crops/statistics').then(unwrapData),
     getDetail: (id) => api.get(`/crops/${id}`).then(unwrapData),
+    getCompare: (cropType) => api.get(`/crops/compare/${cropType}`).then(unwrapData),
     delete: (id) => api.delete(`/crops/${id}`).then(unwrapData)
   },
   energy: {
