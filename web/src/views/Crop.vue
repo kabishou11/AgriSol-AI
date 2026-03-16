@@ -534,14 +534,16 @@ onMounted(() => {
 
 <style scoped>
 .crop-page {
-  padding: 20px;
+  padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  min-height: 100vh;
 }
 
 /* 页面标题 */
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 .header-content {
   display: flex;
@@ -551,15 +553,17 @@ onMounted(() => {
   gap: 16px;
 }
 .page-title {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
   color: #1d2129;
   margin: 0 0 6px;
+  letter-spacing: -0.02em;
 }
 .page-subtitle {
   color: #86909c;
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 400;
 }
 .header-stats {
   display: flex;
@@ -569,23 +573,35 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f6ffed 100%);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+}
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .stat-value {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
   color: #52c41a;
   line-height: 1;
 }
 .stat-label {
-  font-size: 12px;
+  font-size: 13px;
   color: #86909c;
-  margin-top: 4px;
+  margin-top: 6px;
+  font-weight: 500;
 }
 
 /* 上传卡片 */
 .upload-card {
   margin-bottom: 24px;
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
 }
 .upload-zone {
   height: 400px;
