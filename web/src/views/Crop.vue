@@ -919,11 +919,12 @@ onMounted(() => {
   font-size: 11px;
   color: #86909c;
   margin: 6px 0 0;
-  opacity: 0;
+  opacity: 0.6;
   transition: opacity 0.2s;
 }
 .history-item:hover .history-hint {
   opacity: 1;
+  color: #165dff;
 }
 
 /* 详情模态框 */
