@@ -195,6 +195,38 @@ export default async function cropRoutes(fastify, options) {
     }
   })
 
+  fastify.get('/compare/:cropType', async (request, reply) => {
+    try {
+      const { cropType } = request.params
+      const records = db.prepare(`
+        SELECT health_score, created_at
+        FROM crop_records
+        WHERE crop_type = ?
+        ORDER BY created_at DESC
+        LIMIT 10
+      `).all(cropType)
+
+      if (records.length === 0) {
+        return { hasHistory: false }
+      }
+
+      const scores = records.map(r => r.health_score)
+      const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+      const trend = scores.length > 1 ? scores[0] - scores[scores.length - 1] : 0
+
+      return {
+        hasHistory: true,
+        avgScore,
+        trend: trend > 0 ? 'up' : trend < 0 ? 'down' : 'stable',
+        trendValue: Math.abs(trend),
+        recordCount: records.length
+      }
+    } catch (error) {
+      fastify.log.error(error)
+      return reply.code(500).send({ error: '对比分析失败' })
+    }
+  })
+
   fastify.get('/statistics', async (request, reply) => {
     try {
       const totalAnalysis = db.prepare('SELECT COUNT(*) as count FROM crop_records').get().count
