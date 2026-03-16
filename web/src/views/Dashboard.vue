@@ -430,6 +430,8 @@ onMounted(async () => {
 
 .insight-card-body {
   flex: 1;
+  padding-right: 80px;
+  min-width: 0;
 }
 
 .insight-card-title {
@@ -442,6 +444,8 @@ onMounted(async () => {
   font-size: 13px;
   color: #4e5969;
   line-height: 1.6;
+  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .insight-action {
