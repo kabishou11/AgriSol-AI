@@ -536,117 +536,186 @@ onUnmounted(() => {
 
 <style scoped>
 .energy-page {
-  padding: 20px;
+  padding: 24px;
   max-width: 1600px;
   margin: 0 auto;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  min-height: 100vh;
 }
 
 .decision-bar {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
 }
 
 .label {
   color: #4e5969;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .decision-note {
-  margin-top: 12px;
-  color: #86909c;
-  font-size: 13px;
+  margin-top: 16px;
+  padding: 12px;
+  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
+  border-radius: 10px;
+  color: #d46b08;
+  font-size: 14px;
+  border-left: 4px solid #ff9500;
 }
 
 .stats-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .stat-card {
-  border-left: 4px solid #165dff;
+  border-left: 5px solid #1890ff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #ffffff 0%, #e6f7ff 100%);
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .stat-subtitle {
-  margin-top: 8px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 13px;
   color: #86909c;
+  font-weight: 400;
 }
 
 .caliber-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .caliber-card {
-  min-height: 220px;
+  min-height: 240px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.caliber-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .caliber-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .metric-item {
-  background: #f7f8fa;
-  border-radius: 8px;
-  padding: 8px;
+  background: linear-gradient(135deg, #f7f8fa 0%, #e9ecef 100%);
+  border-radius: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.metric-item:hover {
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  transform: scale(1.02);
 }
 
 .metric-item span {
   color: #86909c;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .metric-item strong {
-  font-size: 14px;
+  font-size: 16px;
   color: #1d2129;
+  font-weight: 600;
 }
 
 .caliber-status {
   color: #4e5969;
-  font-size: 13px;
-  margin-bottom: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
+  border-radius: 8px;
+  font-weight: 500;
 }
 
 .caliber-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .main-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.main-row :deep(.arco-card) {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.interpret-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .interpret-card :deep(.arco-alert) {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  border-radius: 10px;
 }
 
 .detail-collapse {
-  margin-top: 8px;
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.detail-collapse :deep(.arco-collapse-item) {
+  background: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .forecast-summary {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .summary-item {
-  background: #f2f3f5;
-  border-radius: 8px;
-  padding: 10px;
+  background: linear-gradient(135deg, #f2f3f5 0%, #e9ecef 100%);
+  border-radius: 10px;
+  padding: 14px;
   text-align: center;
+  transition: all 0.2s;
+}
+
+.summary-item:hover {
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  transform: scale(1.02);
 }
 
 .summary-item .label {
   color: #86909c;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .summary-item .value {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #1d2129;
+  margin-top: 6px;
 }
 </style>
