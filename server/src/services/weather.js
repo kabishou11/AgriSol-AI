@@ -3,6 +3,9 @@ import axios from 'axios';
 const weatherCache = new Map();
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
+const QWEATHER_KEY = process.env.QWEATHER_API_KEY;
+const QWEATHER_URL = process.env.QWEATHER_BASE_URL || 'https://devapi.qweather.com/v7';
+
 export async function getWeatherData(latitude, longitude) {
   const cacheKey = `${latitude},${longitude}`;
   const cached = weatherCache.get(cacheKey);
@@ -12,29 +15,42 @@ export async function getWeatherData(latitude, longitude) {
   }
 
   try {
-    const response = await axios.get('https://api.open-meteo.com/v1/forecast', {
-      params: {
-        latitude,
-        longitude,
-        current: 'temperature_2m,wind_speed_10m,cloud_cover,relative_humidity_2m',
-        hourly: 'temperature_2m,cloud_cover,wind_speed_10m,shortwave_radiation',
-        daily: 'temperature_2m_max,temperature_2m_min,sunshine_duration,wind_speed_10m_max,precipitation_sum,cloud_cover_mean',
-        timezone: 'auto',
-        forecast_days: 7
-      }
-    });
+    const location = `${longitude},${latitude}`;
+    const [nowRes, dailyRes] = await Promise.all([
+      axios.get(`${QWEATHER_URL}/weather/now`, {
+        params: { location, key: QWEATHER_KEY },
+        timeout: 10000
+      }),
+      axios.get(`${QWEATHER_URL}/weather/7d`, {
+        params: { location, key: QWEATHER_KEY },
+        timeout: 10000
+      })
+    ]);
 
-    weatherCache.set(cacheKey, {
-      data: response.data,
-      timestamp: Date.now()
-    });
+    if (nowRes.data.code === '200' && dailyRes.data.code === '200') {
+      const data = {
+        current: {
+          temperature_2m: parseFloat(nowRes.data.now.temp),
+          wind_speed_10m: parseFloat(nowRes.data.now.windSpeed),
+          cloud_cover: parseFloat(nowRes.data.now.cloud || 0),
+          relative_humidity_2m: parseInt(nowRes.data.now.humidity)
+        },
+        daily: {
+          temperature_2m_max: dailyRes.data.daily.map(d => parseFloat(d.tempMax)),
+          temperature_2m_min: dailyRes.data.daily.map(d => parseFloat(d.tempMin)),
+          wind_speed_10m_max: dailyRes.data.daily.map(d => parseFloat(d.windSpeedDay)),
+          precipitation_sum: dailyRes.data.daily.map(d => parseFloat(d.precip || 0)),
+          cloud_cover_mean: dailyRes.data.daily.map(d => parseFloat(d.cloud || 50))
+        }
+      };
 
-    return response.data;
+      weatherCache.set(cacheKey, { data, timestamp: Date.now() });
+      return data;
+    }
+    throw new Error('Weather API error');
   } catch (error) {
     console.error('Weather API error:', error);
-    if (cached) {
-      return cached.data;
-    }
+    if (cached) return cached.data;
     return null;
   }
 }
@@ -72,4 +88,45 @@ export function calculateSolarRadiation(weatherData) {
  */
 export function clearWeatherCache() {
   weatherCache.clear();
+}
+
+/**
+ * Get air quality data from QWeather
+ */
+export async function getAirQuality(latitude, longitude) {
+  const cacheKey = `air:${latitude},${longitude}`;
+  const cached = weatherCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+
+  try {
+    const location = `${longitude},${latitude}`;
+    const res = await axios.get(`${QWEATHER_URL}/air/now`, {
+      params: { location, key: QWEATHER_KEY },
+      timeout: 10000
+    });
+
+    if (res.data.code === '200') {
+      const data = {
+        aqi: parseInt(res.data.now.aqi),
+        category: res.data.now.category,
+        pm25: parseInt(res.data.now.pm2p5),
+        pm10: parseInt(res.data.now.pm10),
+        no2: parseInt(res.data.now.no2),
+        so2: parseInt(res.data.now.so2),
+        co: parseFloat(res.data.now.co),
+        o3: parseInt(res.data.now.o3)
+      };
+
+      weatherCache.set(cacheKey, { data, timestamp: Date.now() });
+      return data;
+    }
+    throw new Error('Air quality API error');
+  } catch (error) {
+    console.error('Air quality API error:', error);
+    if (cached) return cached.data;
+    return null;
+  }
 }
