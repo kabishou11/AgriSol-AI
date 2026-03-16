@@ -5,6 +5,7 @@ import {
   generateOptimizationRecommendations,
   calculateStorageRecommendations
 } from '../services/energy-prediction.js';
+import { getDailyPVForecast } from '../services/solar.js';
 
 function toFixedNumber(value, digits = 2) {
   return Number(Number(value || 0).toFixed(digits));
@@ -422,67 +423,49 @@ export default async function energyRoutes(fastify) {
       const userInputGeneration = Number(userInputRaw?.generation || 0);
       const userInputConsumption = Number(userInputRaw?.consumption || 0);
 
-      // 模型估算口径（近期平均 + 天气预测融合）
-      let estimateBase = getEstimateBaseForDate(uid, targetDate);
+      // 模型估算口径（实时太阳辐射 + 近期平均融合）
+      let estimateGeneration = 0;
+      let estimateConsumption = 0;
+      let estimateConfidence = 0.52;
+      let estimateUpdatedAt = null;
 
-      if (!hasAnyValue(estimateBase, ['avg_generation', 'avg_consumption']) && shouldUseLegacyFallback(uid)) {
-        const legacyEstimateBase = getEstimateBaseLegacyFallback(targetDate);
-        if (hasAnyValue(legacyEstimateBase, ['avg_generation', 'avg_consumption'])) {
-          estimateBase = legacyEstimateBase;
+      // 优先使用实时太阳辐射数据计算发电量
+      try {
+        const solarForecast = await getDailyPVForecast(
+          profile.latitude,
+          profile.longitude,
+          profile.capacityKw * 8.5, // 假设每kW装机约8.5m²光伏板
+          0.18 // 光伏板效率18%
+        );
+
+        if (solarForecast && solarForecast.current > 0) {
+          estimateGeneration = solarForecast.dailyTotal;
+          estimateConsumption = Math.max(estimateGeneration * 0.72, 10);
+          estimateConfidence = 0.82;
+          estimateUpdatedAt = solarForecast.metadata.timestamp;
         }
+      } catch (error) {
+        fastify.log.warn('Solar API failed, falling back to historical data');
       }
 
-      let estimateGeneration = Number(estimateBase?.avg_generation || 0);
-      let estimateConsumption = Number(estimateBase?.avg_consumption || 0);
-      let estimateConfidence = estimateGeneration > 0 || estimateConsumption > 0 ? 0.66 : 0.52;
-      let estimateUpdatedAt = estimateBase?.updated_at || null;
+      // 如果太阳辐射数据不可用，使用历史平均
+      if (estimateGeneration === 0) {
+        let estimateBase = getEstimateBaseForDate(uid, targetDate);
 
-      const predictionCacheKey = getPredictionCacheKey({ mode, regionCode, targetDate });
-      const cachedPrediction = getCachedPrediction(predictionCacheKey);
-
-      if (cachedPrediction) {
-        const predictedGeneration = Number(cachedPrediction?.forecast?.averageDaily || 0);
-
-        if (predictedGeneration > 0) {
-          estimateGeneration = estimateGeneration > 0
-            ? (estimateGeneration * 0.5 + predictedGeneration * 0.5)
-            : predictedGeneration;
-          estimateConsumption = estimateConsumption > 0
-            ? estimateConsumption
-            : Math.max(predictedGeneration * 0.72, 10);
-          estimateConfidence = 0.74;
-          estimateUpdatedAt = cachedPrediction?.generatedAt || new Date().toISOString();
-        }
-      } else {
-        try {
-          const prediction = await getEnergyPrediction(
-            profile.latitude,
-            profile.longitude,
-            profile.capacityKw,
-            []
-          );
-
-          if (prediction) {
-            setCachedPrediction(predictionCacheKey, prediction);
+        if (!hasAnyValue(estimateBase, ['avg_generation', 'avg_consumption']) && shouldUseLegacyFallback(uid)) {
+          const legacyEstimateBase = getEstimateBaseLegacyFallback(targetDate);
+          if (hasAnyValue(legacyEstimateBase, ['avg_generation', 'avg_consumption'])) {
+            estimateBase = legacyEstimateBase;
           }
-
-          const predictedGeneration = Number(prediction?.forecast?.averageDaily || 0);
-
-          if (predictedGeneration > 0) {
-            estimateGeneration = estimateGeneration > 0
-              ? (estimateGeneration * 0.5 + predictedGeneration * 0.5)
-              : predictedGeneration;
-            estimateConsumption = estimateConsumption > 0
-              ? estimateConsumption
-              : Math.max(predictedGeneration * 0.72, 10);
-            estimateConfidence = 0.74;
-            estimateUpdatedAt = new Date().toISOString();
-          }
-        } catch {
-          // 天气预测失败时继续使用统计估算
         }
+
+        estimateGeneration = Number(estimateBase?.avg_generation || 0);
+        estimateConsumption = Number(estimateBase?.avg_consumption || 0);
+        estimateConfidence = estimateGeneration > 0 || estimateConsumption > 0 ? 0.66 : 0.52;
+        estimateUpdatedAt = estimateBase?.updated_at || null;
       }
 
+      // 最终回退到区域默认值
       if (estimateGeneration === 0 && estimateConsumption === 0) {
         estimateGeneration = profile.estimateGeneration;
         estimateConsumption = profile.estimateConsumption;
@@ -593,6 +576,27 @@ export default async function energyRoutes(fastify) {
     const { latitude = 39.9, longitude = 116.4, capacity = 10, userId = 1 } = request.query;
 
     try {
+      const lat = parseFloat(latitude);
+      const lon = parseFloat(longitude);
+      const cap = parseFloat(capacity);
+
+      // 优先使用实时太阳辐射预测
+      const solarForecast = await getDailyPVForecast(lat, lon, cap * 8.5, 0.18);
+
+      if (solarForecast && solarForecast.dailyTotal > 0) {
+        return {
+          success: true,
+          forecast: {
+            averageDaily: solarForecast.dailyTotal,
+            current: solarForecast.current,
+            hourly: solarForecast.hourly
+          },
+          metadata: solarForecast.metadata,
+          generatedAt: new Date().toISOString()
+        };
+      }
+
+      // 回退到天气预测
       const uid = Number(userId) || 1;
       let historicalData = getForecastHistoryForUser(uid);
 
@@ -603,13 +607,7 @@ export default async function energyRoutes(fastify) {
         }
       }
 
-      const prediction = await getEnergyPrediction(
-        parseFloat(latitude),
-        parseFloat(longitude),
-        parseFloat(capacity),
-        historicalData
-      );
-
+      const prediction = await getEnergyPrediction(lat, lon, cap, historicalData);
       return prediction;
     } catch (error) {
       fastify.log.error(error);
