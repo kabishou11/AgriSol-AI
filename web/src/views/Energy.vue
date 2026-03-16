@@ -23,6 +23,10 @@
         <a-col :xs="24" :md="6" style="text-align: right">
           <a-space>
             <a-tag color="blue">{{ overview.regionName || regionName }}</a-tag>
+            <a-button type="outline" @click="showRecordModal = true">
+              <template #icon><icon-plus /></template>
+              录入数据
+            </a-button>
             <a-button type="primary" :loading="loading.overview" @click="loadOverview">
               <template #icon><icon-refresh /></template>
               刷新口径
@@ -184,6 +188,26 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <a-modal
+      v-model:visible="showRecordModal"
+      title="录入今日能源数据"
+      @ok="handleRecordSubmit"
+      @cancel="showRecordModal = false"
+      :ok-loading="recordLoading"
+    >
+      <a-form :model="recordForm" layout="vertical">
+        <a-form-item label="发电量 (kWh)" required>
+          <a-input-number v-model="recordForm.generation" :min="0" :step="0.1" placeholder="请输入今日发电量" style="width: 100%" />
+        </a-form-item>
+        <a-form-item label="用电量 (kWh)" required>
+          <a-input-number v-model="recordForm.consumption" :min="0" :step="0.1" placeholder="请输入今日用电量" style="width: 100%" />
+        </a-form-item>
+        <a-form-item label="上网电量 (kWh)">
+          <a-input-number v-model="recordForm.gridExport" :min="0" :step="0.1" placeholder="可选" style="width: 100%" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -227,6 +251,14 @@ const storageRecommendations = ref({
 
 const showAddDevice = ref(false)
 const newDevice = ref({ deviceName: '', deviceType: '', capacity: 0 })
+
+const showRecordModal = ref(false)
+const recordForm = ref({
+  generation: null,
+  consumption: null,
+  gridExport: null
+})
+const recordLoading = ref(false)
 
 const chartData = ref({ generation: [], consumption: [] })
 const currentPower = ref(0)
@@ -445,6 +477,30 @@ const handleAddDevice = async () => {
     loadDevices()
   } catch {
     Message.error('设备添加失败')
+  }
+}
+
+const handleRecordSubmit = async () => {
+  if (recordForm.value.generation === null || recordForm.value.consumption === null) {
+    Message.warning('请填写发电量和用电量')
+    return
+  }
+  recordLoading.value = true
+  try {
+    await api.energy.record({
+      generation: recordForm.value.generation,
+      consumption: recordForm.value.consumption,
+      gridExport: recordForm.value.gridExport || 0,
+      userId
+    })
+    Message.success('数据录入成功')
+    showRecordModal.value = false
+    recordForm.value = { generation: null, consumption: null, gridExport: null }
+    await loadOverview()
+  } catch {
+    Message.error('数据录入失败')
+  } finally {
+    recordLoading.value = false
   }
 }
 

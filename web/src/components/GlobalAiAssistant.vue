@@ -427,8 +427,16 @@ const loadPosition = () => {
     if (saved) {
       const parsed = JSON.parse(saved)
       if (parsed.x !== undefined && parsed.y !== undefined) {
-        position.value = parsed
-        hasCustomPosition.value = true
+        // 边界检查：确保按钮在可视区域内
+        const maxX = window.innerWidth - 80
+        const maxY = window.innerHeight - 80
+        if (parsed.x >= 0 && parsed.x <= maxX && parsed.y >= 0 && parsed.y <= maxY) {
+          position.value = parsed
+          hasCustomPosition.value = true
+        } else {
+          // 位置超出边界，重置为默认位置
+          localStorage.removeItem('global_ai_position')
+        }
       }
     }
   } catch {}
