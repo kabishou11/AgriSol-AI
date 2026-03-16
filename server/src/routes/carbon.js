@@ -4,6 +4,7 @@ import {
   generateCertificateId,
   getCropTypes
 } from '../services/carbon.js';
+import { autoCalculateTotalCarbon } from '../services/carbon-auto-calc.js';
 
 function toNumber(value, digits = 2) {
   return Number(Number(value || 0).toFixed(digits));
@@ -590,5 +591,33 @@ export default async function carbonRoutes(fastify) {
   // Get crop types
   fastify.get('/api/carbon/crop-types', async () => {
     return getCropTypes();
+  });
+
+  // Auto-calculate carbon from real-time data
+  fastify.get('/api/carbon/auto-calculate', async (request, reply) => {
+    try {
+      const { startDate, endDate, userId = 1 } = request.query || {};
+      const uid = Number(userId) || 1;
+
+      const start = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const end = endDate || new Date().toISOString().slice(0, 10);
+
+      const result = autoCalculateTotalCarbon(uid, start, end);
+
+      return {
+        success: true,
+        data: result,
+        meta: {
+          generatedAt: new Date().toISOString()
+        },
+        message: 'Auto-calculated from real-time data'
+      };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({
+        success: false,
+        error: 'Failed to auto-calculate carbon'
+      });
+    }
   });
 }

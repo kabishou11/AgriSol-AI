@@ -58,7 +58,8 @@ export default {
     getCropTypes: () => api.get('/carbon/crop-types').then(unwrapData),
     getReport: () => api.get('/carbon/report').then(unwrapData),
     getMonthlyReport: (params) => api.get('/carbon/reports/monthly', { params }).then(unwrapData),
-    generateMonthlyReport: (data) => api.post('/carbon/reports/monthly/generate', data).then(unwrapData)
+    generateMonthlyReport: (data) => api.post('/carbon/reports/monthly/generate', data).then(unwrapData),
+    autoCalculate: (params) => api.get('/carbon/auto-calculate', { params }).then(unwrapData)
   },
   environment: {
     record: (data) => api.post('/environment/record', data).then(unwrapData),
