@@ -485,7 +485,7 @@ const viewHistoryDetail = async (item) => {
   detailLoading.value = true
   detailData.value = null
   try {
-    const res = await api.crop.getRecord(item.id)
+    const res = await api.crop.getDetail(item.id)
     detailData.value = res.data || res
   } catch (error) {
     Message.error('加载详情失败')
