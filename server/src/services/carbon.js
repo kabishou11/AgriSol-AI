@@ -13,7 +13,7 @@ const EMISSION_FACTORS = {
 
 // Carbon sequestration rates based on IPCC guidelines
 // Values in tons CO2e per hectare per year
-const CROP_SEQUESTRATION_RATES = {
+export const CROP_SEQUESTRATION_RATES = {
   rice: {
     rate: 2.8,
     icon: '🌾',

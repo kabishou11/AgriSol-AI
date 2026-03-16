@@ -42,11 +42,14 @@
   --color-info: #1890ff;
 
   /* Background Colors */
-  --bg-primary: #f8f9fa;
-  --bg-secondary: #f1f5f9;
-  --bg-tertiary: #e2e8f0;
+  --bg-primary: #f0f4f8;
+  --bg-secondary: #e1e8ed;
+  --bg-tertiary: #d3dce6;
   --bg-card: #ffffff;
   --bg-overlay: rgba(0, 0, 0, 0.45);
+  --bg-pattern: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --bg-gradient-light: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  --bg-gradient-warm: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
 
   /* Gradient Colors */
   --gradient-primary: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);

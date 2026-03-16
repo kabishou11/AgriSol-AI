@@ -366,15 +366,35 @@ onMounted(async () => {
 <style scoped>
 .dashboard-container {
   padding: 24px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
+  position: relative;
+}
+
+.dashboard-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.dashboard-container > * {
+  position: relative;
+  z-index: 1;
 }
 
 .briefing-card {
   margin-bottom: 20px;
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
 }
 
 .briefing-meta {
@@ -499,10 +519,12 @@ onMounted(async () => {
 .metric-card {
   text-align: center;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   transition: all 0.3s;
   overflow: hidden;
   position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
 }
 
 .metric-card::before {
@@ -513,38 +535,34 @@ onMounted(async () => {
   right: 0;
   height: 4px;
   background: linear-gradient(90deg, transparent, currentColor, transparent);
-  opacity: 0.3;
+  opacity: 0.6;
 }
 
 .metric-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
 .metric-card.agriculture {
   border-left: 5px solid #52c41a;
-  background: linear-gradient(135deg, #ffffff 0%, #f6ffed 100%);
 }
 
 .metric-card.agriculture::before { color: #52c41a; }
 
 .metric-card.energy {
   border-left: 5px solid #ff9500;
-  background: linear-gradient(135deg, #ffffff 0%, #fff7e6 100%);
 }
 
 .metric-card.energy::before { color: #ff9500; }
 
 .metric-card.carbon {
   border-left: 5px solid #1890ff;
-  background: linear-gradient(135deg, #ffffff 0%, #e6f7ff 100%);
 }
 
 .metric-card.carbon::before { color: #1890ff; }
 
 .metric-card.environment {
   border-left: 5px solid #722ed1;
-  background: linear-gradient(135deg, #ffffff 0%, #f9f0ff 100%);
 }
 
 .metric-card.environment::before { color: #722ed1; }
