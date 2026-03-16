@@ -432,39 +432,71 @@ onUnmounted(() => {
 
 <style scoped>
 .carbon-page {
-  padding: 20px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  min-height: 100vh;
 }
 
 .top-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .stat-card {
-  min-height: 150px;
+  min-height: 160px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .report-status {
-  margin-top: 8px;
+  margin-top: 12px;
   color: #4e5969;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .chart-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.chart-row :deep(.arco-card) {
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
 }
 
 .ledger-card {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
 }
 
 .report-card {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
 }
 
 .report-preview {
-  margin-top: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0fff4 0%, #e6f9ed 100%);
+  border-radius: 12px;
+  border-left: 4px solid #52c41a;
 }
 
 .calc-card {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
 }
 </style>
