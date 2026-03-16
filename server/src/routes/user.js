@@ -1,16 +1,6 @@
 import db from '../database.js';
-import { formatRecordDates, formatRecordsDates } from '../utils/date-formatter.js';
-
-const normalizeDates = (obj) => {
-  if (!obj || typeof obj !== 'object') return obj;
-  const r = { ...obj };
-  for (const k of Object.keys(r)) {
-    if (typeof r[k] === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(r[k])) {
-      r[k] = r[k].replace(' ', 'T') + 'Z';
-    }
-  }
-  return r;
-};
+import { formatRecordDates } from '../utils/date-formatter.js';
+import { getAllSystemPrompts } from '../services/prompt-manager.js';
 
 export default async function userRoutes(fastify) {
 
@@ -34,7 +24,7 @@ export default async function userRoutes(fastify) {
       // Extended user fields from seed
       const extUser = db.prepare('SELECT phone, location, farm_area, avatar FROM users WHERE id = ?').get(userId);
 
-      return normalizeDates({ ...user, ...extUser, stats });
+      return formatRecordDates({ ...user, ...extUser, stats });
     } catch (error) {
       reply.code(500).send({ error: error.message });
     }
@@ -126,7 +116,7 @@ export default async function userRoutes(fastify) {
         SELECT * FROM activity_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?
       `).all(userId, parseInt(limit), parseInt(offset));
       const { total } = db.prepare('SELECT COUNT(*) as total FROM activity_logs WHERE user_id = ?').get(userId);
-      return { history: history.map(normalizeDates), total, limit, offset };
+      return { history: history.map(formatRecordDates), total, limit, offset };
     } catch (error) {
       reply.code(500).send({ error: error.message });
     }
@@ -136,15 +126,7 @@ export default async function userRoutes(fastify) {
   fastify.get('/api/user/ai-config', async (request, reply) => {
     try {
       const userId = request.query.userId || 1;
-      // Return current AI config + available prompts
-      const prompts = [
-        { id: 'crop_analysis', name: '作物分析助手', system: '你是专业的农业作物分析AI，擅长识别病虫害、评估作物健康状态，给出精准的农业建议。', active: true },
-        { id: 'energy_advisor', name: '能源优化顾问', system: '你是光伏农业能源管理专家，专注于农光互补系统的发电优化、储能配置和能源效率提升。', active: true },
-        { id: 'carbon_expert', name: '碳汇计算专家', system: '你是农业碳汇领域专家，熟悉碳汇计算方法、碳交易政策，能帮助农户最大化碳汇收益。', active: true },
-        { id: 'env_monitor', name: '环境监测分析师', system: '你是农业生态环境专家，专注于土壤健康、水资源管理、生物多样性保护，提供科学的环境改善建议。', active: true },
-        { id: 'wisdom_organizer', name: '农事经验整理师', system: '你是农业知识管理专家，擅长将口述农事经验整理成结构化知识，提炼关键技术要点。', active: false },
-        { id: 'general', name: '通用农业助手', system: '你是AgriSol-AI农光智助平台的综合AI助手，覆盖农业、能源、碳汇、环境等全领域，为农户提供一站式智慧农业服务。', active: false }
-      ];
+      const prompts = getAllSystemPrompts();
       return { prompts, apiKeyConfigured: !!process.env.MODELSCOPE_API_KEY };
     } catch (error) {
       reply.code(500).send({ error: error.message });
