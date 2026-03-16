@@ -241,6 +241,50 @@ function getDailyInsightMetrics({ date, userId }) {
   return { energy, carbon, environment, crop };
 }
 
+async function generateAiInsights({ energy, carbon, environment, crop, mode, regionCode }) {
+  const formatNum = (value, digits = 1) => Number(value || 0).toFixed(digits);
+  const generation = Number(energy?.total_generation || 0);
+  const consumption = Number(energy?.total_consumption || 0);
+  const selfSufficiencyPct = consumption > 0 ? Number(((generation / consumption) * 100).toFixed(1)) : 0;
+  const envScore = Number(environment?.avg_env_score || 0);
+  const cropHealth = Number(crop?.avg_health_score || 0);
+  const totalCarbonTons = Number(carbon?.total_carbon_tons || 0);
+  const regionName = mode === 'shouguang' ? '山东寿光样板' : '全国通用';
+
+  const prompt = `你是AgriSol-AI农光智助平台的AI助手，请根据今日经营数据生成4条简明洞察：
+
+能源：发电${formatNum(generation, 1)}kWh 用电${formatNum(consumption, 1)}kWh 自给率${formatNum(selfSufficiencyPct, 1)}%
+作物：近30天健康分${formatNum(cropHealth, 1)}
+环境：近30天评分${formatNum(envScore, 0)}
+碳汇：近12月固碳${formatNum(totalCarbonTons, 2)}吨
+地区：${regionName}
+
+格式（每行一条）：
+图标|级别|标题|描述|类别
+示例：⚡|success|能源平稳|自给率85%保持策略|energy
+
+图标：⚡✅⚠️🌾🧪🌿🌱🌳📘
+级别：success/warning/info
+类别：energy/crop/environment/carbon
+直接输出4行，无其他文字。`;
+
+  try {
+    const aiResponse = await getAgriWisdom(prompt);
+    if (!aiResponse || aiResponse === 'Unable to provide answer at this time') return null;
+
+    const lines = aiResponse.trim().split('\n').filter(l => l.includes('|'));
+    const actionKeyMap = { energy: 'OPEN_ENERGY', crop: 'OPEN_CROP', environment: 'OPEN_ENVIRONMENT', carbon: 'OPEN_CARBON' };
+    const insights = lines.slice(0, 4).map(line => {
+      const [icon, level, title, desc, category] = line.split('|').map(s => s.trim());
+      return { icon, level, title, desc, category, actionKey: actionKeyMap[category] || 'OPEN_ENERGY' };
+    });
+
+    return insights.length >= 3 ? insights : null;
+  } catch {
+    return null;
+  }
+}
+
 function getReportCache({ userId, reportType, reportPeriod }) {
   const row = db.prepare(`
     SELECT id, report_data, created_at
@@ -343,13 +387,36 @@ export default async function aiRoutes(fastify) {
         date: targetDate,
         userId: Number(userId)
       });
-      let payload = buildDailyInsightPayload({
+
+      // 尝试AI生成洞察
+      const aiInsights = await generateAiInsights({
         ...metrics,
         mode,
         regionCode
       });
 
-      // Keep deterministic payload: no extra model call on this hot path.
+      let payload;
+      if (aiInsights && aiInsights.length >= 3) {
+        // AI生成成功
+        payload = {
+          insights: aiInsights,
+          meta: {
+            generatedAt: new Date().toISOString(),
+            regionMode: mode,
+            regionName: mode === 'shouguang' ? '山东寿光样板' : '全国通用',
+            dataWindow: 'energy:1d,crop:30d,environment:30d,carbon:12m',
+            source: 'ai'
+          }
+        };
+      } else {
+        // AI失败，回退到规则生成
+        payload = buildDailyInsightPayload({
+          ...metrics,
+          mode,
+          regionCode
+        });
+        payload.meta = { ...payload.meta, source: 'rule' };
+      }
 
       upsertReportCache({
         userId: Number(userId),
