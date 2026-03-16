@@ -1,56 +1,131 @@
 <template>
   <div class="carbon-page">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h1>🌍 碳汇计算</h1>
-      <p>计算农业碳汇量，追踪碳减排贡献，生成认证报告</p>
-    </div>
+    <a-page-header title="碳账本与月报中心" subtitle="经营沉淀 + 申报准备双主线" />
 
-    <!-- 统计卡片 -->
-    <a-row :gutter="16" style="margin-bottom: 16px">
+    <a-row :gutter="16" class="top-row">
       <a-col :span="24" :md="8">
-        <a-card class="stat-card">
+        <a-card class="stat-card" :bordered="false">
           <a-statistic
-            title="总碳汇量"
-            :value="statistics.totalCarbon"
-            suffix="吨 CO₂"
+            title="累计固碳"
+            :value="statistics.totalCarbonTons"
+            suffix="吨CO₂"
             :precision="2"
             :value-style="{ color: '#52c41a', fontSize: '28px', fontWeight: 'bold' }"
-          >
-            <template #prefix>🌿</template>
-          </a-statistic>
+          />
         </a-card>
       </a-col>
       <a-col :span="24" :md="8">
-        <a-card class="stat-card">
+        <a-card class="stat-card" :bordered="false">
           <a-statistic
-            title="等效植树数"
-            :value="statistics.totalTrees"
+            title="等效植树"
+            :value="statistics.equivalentTrees"
             suffix="棵"
             :value-style="{ color: '#1890ff', fontSize: '28px', fontWeight: 'bold' }"
-          >
-            <template #prefix>🌳</template>
-          </a-statistic>
+          />
         </a-card>
       </a-col>
       <a-col :span="24" :md="8">
-        <a-card class="stat-card">
+        <a-card class="stat-card" :bordered="false">
           <a-statistic
-            title="本月新增"
-            :value="statistics.monthlyCarbon"
-            suffix="吨 CO₂"
+            title="本月碳账本"
+            :value="statistics.monthlyCarbonTons"
+            suffix="吨CO₂"
             :precision="2"
             :value-style="{ color: '#fa8c16', fontSize: '28px', fontWeight: 'bold' }"
-          >
-            <template #prefix>📅</template>
-          </a-statistic>
+          />
+          <div class="report-status">
+            月报状态：
+            <a-tag :color="statistics.reportStatus === 'generated' ? 'green' : 'orange'">
+              {{ statistics.reportStatus === 'generated' ? '已生成' : '未生成' }}
+            </a-tag>
+          </div>
         </a-card>
       </a-col>
     </a-row>
 
-    <!-- 计算表单 -->
-    <a-card class="calc-card" style="margin-bottom: 16px">
-      <template #title>🧮 碳汇计算器</template>
+    <a-row :gutter="16" class="chart-row">
+      <a-col :span="24" :md="14">
+        <a-card :bordered="false" title="月度碳汇趋势（真实数据）">
+          <div v-if="statistics.monthlyTrend.length" ref="trendChart" style="height: 300px"></div>
+          <a-empty v-else description="暂无趋势数据，请先加入碳账本记录" />
+        </a-card>
+      </a-col>
+      <a-col :span="24" :md="10">
+        <a-card :bordered="false" title="作物贡献构成">
+          <div v-if="statistics.byCropType.length" ref="pieChart" style="height: 300px"></div>
+          <a-empty v-else description="暂无作物贡献数据" />
+        </a-card>
+      </a-col>
+    </a-row>
+
+    <a-card class="ledger-card" :bordered="false">
+      <template #title>碳账本记录</template>
+      <template #extra>
+        <a-space>
+          <a-date-picker v-model="selectedMonth" mode="month" value-format="YYYY-MM" placeholder="按月份筛选" style="width: 140px" @change="handleMonthChange" />
+          <a-button size="small" @click="resetMonth">重置</a-button>
+          <a-button size="small" @click="loadLedger">
+            <template #icon><icon-refresh /></template>
+            刷新
+          </a-button>
+        </a-space>
+      </template>
+      <a-table
+        :columns="ledgerColumns"
+        :data="ledgerData"
+        :loading="loadingLedger"
+        :pagination="pagination"
+        @page-change="handlePageChange"
+        size="small"
+      >
+        <template #cropType="{ record }">
+          <a-tag color="green">{{ record.cropType || record.crop_type }}</a-tag>
+        </template>
+        <template #carbon="{ record }">
+          <span style="color: #52c41a; font-weight: bold">
+            {{ Number(record.carbon || record.carbon_sequestered || 0).toFixed(2) }} 吨
+          </span>
+        </template>
+        <template #trees="{ record }">
+          🌳 {{ record.trees || record.equivalent_trees || 0 }}
+        </template>
+        <template #date="{ record }">
+          {{ formatDate(record.created_at || record.date) }}
+        </template>
+      </a-table>
+    </a-card>
+
+    <a-card class="report-card" :bordered="false">
+      <template #title>月报中心</template>
+      <a-row :gutter="12" align="center">
+        <a-col :xs="24" :md="10">
+          <a-space>
+            <span>目标月份</span>
+            <a-date-picker v-model="reportMonth" mode="month" value-format="YYYY-MM" style="width: 140px" />
+          </a-space>
+        </a-col>
+        <a-col :xs="24" :md="14" style="text-align: right">
+          <a-space>
+            <a-button :loading="reportLoading" @click="loadMonthlyReport">查看月报</a-button>
+            <a-button type="primary" :loading="reportLoading" @click="generateMonthlyReport">生成月报</a-button>
+          </a-space>
+        </a-col>
+      </a-row>
+
+      <div class="report-preview" v-if="monthlyReport.status === 'generated' && monthlyReport.report">
+        <a-descriptions :column="1" bordered>
+          <a-descriptions-item label="报告类型">{{ monthlyReport.report.reportType }}</a-descriptions-item>
+          <a-descriptions-item label="生成时间">{{ formatDateTime(monthlyReport.report.generatedAt) }}</a-descriptions-item>
+          <a-descriptions-item label="记录条数">{{ monthlyReport.report.summary?.recordCount || 0 }}</a-descriptions-item>
+          <a-descriptions-item label="总固碳">{{ Number(monthlyReport.report.summary?.totalCarbonTons || 0).toFixed(3) }} 吨CO₂</a-descriptions-item>
+          <a-descriptions-item label="等效植树">{{ monthlyReport.report.summary?.equivalentTrees || 0 }} 棵</a-descriptions-item>
+        </a-descriptions>
+      </div>
+      <a-empty v-else description="该月份尚未生成月报" />
+    </a-card>
+
+    <a-card class="calc-card" :bordered="false">
+      <template #title>补录工具：加入本月碳账本</template>
       <a-form :model="form" layout="vertical" @submit.prevent="handleCalculate">
         <a-row :gutter="16">
           <a-col :span="24" :md="8">
@@ -92,154 +167,60 @@
                 :marks="{ 6: '6月', 12: '1年', 24: '2年', 36: '3年' }"
                 show-tooltip
               />
-              <div style="text-align: center; margin-top: 8px">
-                <a-tag color="blue">{{ form.duration }} 个月</a-tag>
-              </div>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item>
-          <a-button
-            type="primary"
-            html-type="submit"
-            :loading="calculating"
-            size="large"
-            style="width: 200px; background: #52c41a; border-color: #52c41a; font-size: 16px"
-          >
-            <template #icon><icon-formula /></template>
-            立即计算碳汇量
-          </a-button>
-        </a-form-item>
-      </a-form>
-    </a-card>
-
-    <!-- 计算结果 -->
-    <transition name="result-fade">
-      <a-card v-if="calcResult" class="result-card" style="margin-bottom: 16px">
-        <template #title>✅ 计算结果</template>
-        <a-row :gutter="24" align="center">
-          <a-col :span="24" :md="10">
-            <div class="result-main">
-              <div class="result-label">碳汇量</div>
-              <div class="result-value">{{ calcResult.carbon.toFixed(2) }}</div>
-              <div class="result-unit">吨 CO₂</div>
-            </div>
-          </a-col>
-          <a-col :span="24" :md="10">
-            <div class="result-trees">
-              <div class="result-label">等效植树</div>
-              <div class="trees-icon">🌳</div>
-              <div class="result-value trees-value">{{ calcResult.trees }}</div>
-              <div class="result-unit">棵</div>
-            </div>
-          </a-col>
-        </a-row>
-        <a-divider />
-        <div style="padding: 0 16px">
-          <div style="margin-bottom: 8px; color: #666">减排贡献进度</div>
-          <a-progress
-            :percent="Math.min(calcResult.carbon / 10, 1)"
-            :format="() => `${calcResult.carbon.toFixed(2)} 吨`"
-            status="success"
-            size="large"
-          />
-        </div>
-        <a-divider />
-        <div style="padding: 0 16px; color: #666; font-size: 13px">
-          认证编号：<a-tag color="green">{{ calcResult.certNo }}</a-tag>
-        </div>
-        <a-divider />
         <a-space>
-          <a-button type="primary" :loading="saving" @click="handleSave">
-            <template #icon><icon-save /></template>
-            保存记录
+          <a-button type="primary" html-type="submit" :loading="calculating" size="large">
+            计算本次碳贡献
           </a-button>
-          <a-button @click="handleDownload">
-            <template #icon><icon-download /></template>
-            下载报告
+          <a-button type="primary" status="success" :loading="saving" :disabled="!calcResult" @click="handleSave">
+            加入本月碳账本
           </a-button>
         </a-space>
-      </a-card>
-    </transition>
+      </a-form>
 
-    <!-- 碳汇账本 -->
-    <a-card class="ledger-card" style="margin-bottom: 16px">
-      <template #title>📒 碳汇账本</template>
-      <template #extra>
-        <a-button size="small" @click="loadLedger">
-          <template #icon><icon-refresh /></template>
-          刷新
-        </a-button>
-      </template>
-      <a-table
-        :columns="ledgerColumns"
-        :data="ledgerData"
-        :loading="loadingLedger"
-        :pagination="pagination"
-        @page-change="handlePageChange"
-        size="small"
-      >
-        <template #cropType="{ record }">
-          <a-tag color="green">{{ record.crop_type || record.cropType }}</a-tag>
-        </template>
-        <template #carbon="{ record }">
-          <span style="color: #52c41a; font-weight: bold">
-            {{ Number(record.carbon_sequestered || record.carbon || 0).toFixed(2) }} 吨
-          </span>
-        </template>
-        <template #trees="{ record }">
-          🌳 {{ record.equivalent_trees || record.trees || 0 }}
-        </template>
-        <template #status="{ record }">
-          <a-tag color="blue">{{ record.status || '已认证' }}</a-tag>
-        </template>
-        <template #date="{ record }">
-          {{ formatDate(record.created_at || record.date) }}
-        </template>
-      </a-table>
+      <a-alert
+        v-if="calcResult"
+        style="margin-top: 12px"
+        type="success"
+        :title="`本次预计固碳 ${calcResult.carbon.toFixed(3)} 吨CO₂，等效植树 ${calcResult.trees} 棵`"
+      />
     </a-card>
-
-    <!-- 图表区域 -->
-    <a-row :gutter="16">
-      <a-col :span="24" :md="14">
-        <a-card>
-          <template #title>📈 碳汇累计趋势</template>
-          <div ref="trendChart" style="height: 280px"></div>
-        </a-card>
-      </a-col>
-      <a-col :span="24" :md="10">
-        <a-card>
-          <template #title>🥧 作物碳汇构成</template>
-          <div ref="pieChart" style="height: 280px"></div>
-        </a-card>
-      </a-col>
-    </a-row>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { IconFormula, IconSave, IconDownload, IconRefresh } from '@arco-design/web-vue/es/icon'
+import { IconRefresh } from '@arco-design/web-vue/es/icon'
 import * as echarts from 'echarts'
 import apiService from '../api.js'
 
-// 碳汇系数
-const carbonFactors = {
-  '水稻': 0.18, '小麦': 0.12, '玉米': 0.15,
-  '大豆': 0.20, '蔬菜': 0.08, '果树': 0.25
-}
+const userId = 1
 
 const form = reactive({ cropType: '水稻', area: 1, areaUnit: '亩', duration: 12 })
 const calculating = ref(false)
 const saving = ref(false)
 const calcResult = ref(null)
 
-const statistics = reactive({ totalCarbon: 0, totalTrees: 0, monthlyCarbon: 0 })
+const statistics = reactive({
+  totalCarbonTons: 0,
+  equivalentTrees: 0,
+  monthlyCarbonTons: 0,
+  monthlyTrend: [],
+  byCropType: [],
+  reportStatus: 'not_generated'
+})
 
 const ledgerData = ref([])
 const loadingLedger = ref(false)
+const selectedMonth = ref('')
 const pagination = reactive({ current: 1, pageSize: 8, total: 0 })
+
+const reportMonth = ref(new Date().toISOString().slice(0, 7))
+const reportLoading = ref(false)
+const monthlyReport = ref({ status: 'not_generated', report: null })
 
 const trendChart = ref(null)
 const pieChart = ref(null)
@@ -247,88 +228,58 @@ let trendChartInstance = null
 let pieChartInstance = null
 
 const ledgerColumns = [
-  { title: '日期', slotName: 'date', width: 100 },
-  { title: '作物', slotName: 'cropType', width: 80 },
+  { title: '日期', slotName: 'date', width: 120 },
+  { title: '作物', slotName: 'cropType', width: 100 },
   { title: '面积', dataIndex: 'planting_area', width: 80 },
-  { title: '碳汇量', slotName: 'carbon', width: 100 },
-  { title: '等效植树', slotName: 'trees', width: 90 },
-  { title: '状态', slotName: 'status', width: 80 }
+  { title: '碳汇量', slotName: 'carbon', width: 120 },
+  { title: '等效植树', slotName: 'trees', width: 100 }
 ]
 
-const handleCalculate = async () => {
-  if (!form.cropType || !form.area || form.area <= 0) {
-    Message.warning('请填写完整的计算参数')
-    return
-  }
-  calculating.value = true
-  try {
-    let carbon
-    try {
-      const res = await apiService.carbon.calculate(form)
-      carbon = res.carbon || res.totalSequestered || res.data?.carbon
-    } catch {
-      // 前端模拟计算
-      const factor = carbonFactors[form.cropType] || 0.15
-      const areaInMu = form.areaUnit === '公顷' ? form.area * 15 : form.area
-      carbon = areaInMu * form.duration * factor / 12
-    }
-    calcResult.value = {
-      carbon: Number(carbon.toFixed(3)),
-      trees: Math.round(carbon * 45),
-      certNo: 'CERT-' + Date.now().toString(36).toUpperCase()
-    }
-    Message.success('计算完成')
-  } catch (e) {
-    Message.error('计算失败，请重试')
-  } finally {
-    calculating.value = false
-  }
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  const d = new Date(String(dateStr).replace(' ', 'T'))
+  return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('zh-CN')
 }
 
-const handleSave = async () => {
-  if (!calcResult.value) return
-  saving.value = true
-  try {
-    await apiService.carbon.record({ ...form, ...calcResult.value })
-    Message.success('记录已保存')
-    loadLedger()
-    loadStatistics()
-  } catch {
-    Message.error('保存失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-const handleDownload = () => {
-  Message.info('报告下载功能开发中')
+const formatDateTime = (value) => {
+  if (!value) return '-'
+  const date = new Date(String(value).replace(' ', 'T'))
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('zh-CN', { hour12: false })
 }
 
 const loadStatistics = async () => {
   try {
-    const res = await apiService.carbon.getStatistics()
-    const data = res.data || res
-    const totals = data.totals || data
-    statistics.totalCarbon = Number(totals.totalCarbon || totals.total_carbon || 0)
-    statistics.totalTrees = totals.totalTrees || totals.total_trees || 0
-    statistics.monthlyCarbon = Number(totals.monthlyCarbon || totals.monthly_carbon || 0)
+    const data = await apiService.carbon.getStatistics({ period: '12m', userId })
+    statistics.totalCarbonTons = Number(data.totalCarbonTons || 0)
+    statistics.equivalentTrees = Number(data.equivalentTrees || 0)
+    statistics.monthlyCarbonTons = Number(data.monthlyCarbonTons || 0)
+    statistics.monthlyTrend = data.monthlyTrend || []
+    statistics.byCropType = data.byCropType || []
+    statistics.reportStatus = data.reportStatus || 'not_generated'
+
+    await nextTick()
+    renderCharts()
   } catch {
-    // 静默失败
+    Message.warning('加载碳汇统计失败')
   }
 }
 
 const loadLedger = async () => {
   loadingLedger.value = true
   try {
-    const res = await apiService.carbon.getLedger({
+    const data = await apiService.carbon.getLedger({
+      userId,
+      month: selectedMonth.value || undefined,
       limit: pagination.pageSize,
       offset: (pagination.current - 1) * pagination.pageSize
     })
-    const data = res.data || res
-    ledgerData.value = data.records || data.list || []
-    pagination.total = data.total || ledgerData.value.length
+
+    ledgerData.value = data.records || []
+    pagination.total = Number(data.total || 0)
   } catch {
     ledgerData.value = []
+    pagination.total = 0
   } finally {
     loadingLedger.value = false
   }
@@ -339,51 +290,123 @@ const handlePageChange = (page) => {
   loadLedger()
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-'
-  const d = new Date(String(dateStr).replace(' ', 'T'))
-  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('zh-CN')
+const handleMonthChange = () => {
+  pagination.current = 1
+  loadLedger()
 }
 
-const initCharts = async () => {
-  let byCrop = []
-  let trend = []
-  try {
-    const res = await apiService.carbon.getStatistics()
-    const data = res.data || res
-    byCrop = data.byCropType || data.by_crop || []
-    trend = data.trend || data.monthly || []
-  } catch { /* 使用空数据 */ }
+const resetMonth = () => {
+  selectedMonth.value = ''
+  pagination.current = 1
+  loadLedger()
+}
 
-  // 趋势图
+const loadMonthlyReport = async () => {
+  reportLoading.value = true
+  try {
+    const data = await apiService.carbon.getMonthlyReport({ month: reportMonth.value, userId })
+    monthlyReport.value = {
+      status: data.status || 'not_generated',
+      report: data.report || null
+    }
+  } catch {
+    monthlyReport.value = { status: 'not_generated', report: null }
+    Message.warning('读取月报失败')
+  } finally {
+    reportLoading.value = false
+  }
+}
+
+const generateMonthlyReport = async () => {
+  reportLoading.value = true
+  try {
+    await apiService.carbon.generateMonthlyReport({ month: reportMonth.value, userId })
+    Message.success('月报已生成')
+    await Promise.all([loadMonthlyReport(), loadStatistics()])
+  } catch {
+    Message.error('生成月报失败')
+  } finally {
+    reportLoading.value = false
+  }
+}
+
+const handleCalculate = async () => {
+  if (!form.cropType || !form.area || form.area <= 0) {
+    Message.warning('请填写完整的计算参数')
+    return
+  }
+  calculating.value = true
+  try {
+    const res = await apiService.carbon.calculate(form)
+    const carbon = Number(res.carbon || res.totalSequestered || 0)
+    const trees = Number(res.trees || res.equivalentTrees || Math.round(carbon * 45))
+    calcResult.value = { carbon, trees }
+  } catch {
+    Message.error('计算失败，请重试')
+  } finally {
+    calculating.value = false
+  }
+}
+
+const handleSave = async () => {
+  if (!calcResult.value) return
+  saving.value = true
+  try {
+    await apiService.carbon.record({ ...form, userId })
+    Message.success('已加入本月碳账本')
+    await Promise.all([loadLedger(), loadStatistics(), loadMonthlyReport()])
+  } catch {
+    Message.error('加入账本失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+const renderCharts = () => {
   if (trendChart.value) {
-    trendChartInstance = echarts.init(trendChart.value)
-    const months = trend.length ? trend.map(t => t.month || t.date) : ['1月','2月','3月','4月','5月','6月']
-    const values = trend.length ? trend.map(t => t.carbon || t.value || 0) : [0.2,0.5,0.8,1.2,1.8,2.3]
+    if (!trendChartInstance) {
+      trendChartInstance = echarts.init(trendChart.value)
+    }
+
     trendChartInstance.setOption({
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: months },
-      yAxis: { type: 'value', name: '吨CO₂' },
+      xAxis: {
+        type: 'category',
+        data: statistics.monthlyTrend.map((item) => item.month)
+      },
+      yAxis: {
+        type: 'value',
+        name: '吨CO₂'
+      },
       series: [{
-        name: '碳汇量', type: 'line', smooth: true, areaStyle: { color: 'rgba(82,196,26,0.2)' },
-        lineStyle: { color: '#52c41a' }, itemStyle: { color: '#52c41a' }, data: values
+        name: '月度固碳',
+        type: 'line',
+        smooth: true,
+        data: statistics.monthlyTrend.map((item) => Number(item.totalCarbonTons || 0)),
+        areaStyle: { color: 'rgba(82,196,26,0.2)' },
+        lineStyle: { color: '#52c41a' },
+        itemStyle: { color: '#52c41a' }
       }]
     })
   }
 
-  // 饼图
   if (pieChart.value) {
-    pieChartInstance = echarts.init(pieChart.value)
-    const pieData = byCrop.length
-      ? byCrop.map(b => ({ name: b.crop_type || b.cropType, value: Number(b.total_carbon || b.carbon || 0).toFixed(2) }))
-      : Object.entries(carbonFactors).map(([k, v]) => ({ name: k, value: v }))
+    if (!pieChartInstance) {
+      pieChartInstance = echarts.init(pieChart.value)
+    }
+
     pieChartInstance.setOption({
       tooltip: { trigger: 'item', formatter: '{b}: {c} 吨 ({d}%)' },
       legend: { orient: 'vertical', right: 10, top: 'center' },
       series: [{
-        name: '作物碳汇', type: 'pie', radius: ['40%', '70%'],
+        name: '作物碳汇贡献',
+        type: 'pie',
+        radius: ['40%', '70%'],
         center: ['40%', '50%'],
-        data: pieData,
+        data: statistics.byCropType.map((item) => ({
+          name: item.crop_type || item.cropType,
+          value: Number(item.total_carbon || item.totalCarbonTons || 0)
+        })),
         label: { show: false }
       }]
     })
@@ -395,10 +418,8 @@ const handleResize = () => {
   pieChartInstance?.resize()
 }
 
-onMounted(() => {
-  loadStatistics()
-  loadLedger()
-  setTimeout(initCharts, 300)
+onMounted(async () => {
+  await Promise.all([loadStatistics(), loadLedger(), loadMonthlyReport()])
   window.addEventListener('resize', handleResize)
 })
 
@@ -414,81 +435,36 @@ onUnmounted(() => {
   padding: 20px;
 }
 
-.page-header {
-  margin-bottom: 20px;
-}
-
-.page-header h1 {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 0 0 4px;
-  color: #1890ff;
-}
-
-.page-header p {
-  color: #666;
-  margin: 0;
+.top-row {
+  margin-bottom: 16px;
 }
 
 .stat-card {
+  min-height: 150px;
+}
+
+.report-status {
+  margin-top: 8px;
+  color: #4e5969;
+}
+
+.chart-row {
   margin-bottom: 16px;
-}
-
-.calc-card {
-  margin-bottom: 16px;
-}
-
-.result-card {
-  margin-bottom: 16px;
-  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
-  border-color: #b7eb8f;
-}
-
-.result-main,
-.result-trees {
-  text-align: center;
-  padding: 20px 0;
-}
-
-.result-label {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.result-value {
-  font-size: 48px;
-  font-weight: bold;
-  color: #52c41a;
-  line-height: 1.1;
-}
-
-.trees-value {
-  font-size: 48px;
-  color: #1890ff;
-}
-
-.result-unit {
-  font-size: 16px;
-  color: #888;
-  margin-top: 4px;
-}
-
-.trees-icon {
-  font-size: 48px;
-  line-height: 1.2;
 }
 
 .ledger-card {
   margin-bottom: 16px;
 }
 
-.result-fade-enter-active {
-  transition: all 0.4s ease;
+.report-card {
+  margin-bottom: 16px;
 }
 
-.result-fade-enter-from {
-  opacity: 0;
-  transform: translateY(-16px);
+.report-preview {
+  margin-top: 12px;
+}
+
+.calc-card {
+  margin-bottom: 16px;
 }
 </style>

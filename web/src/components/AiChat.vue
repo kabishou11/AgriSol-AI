@@ -62,7 +62,7 @@
             class="message"
             :class="msg.role === 'user' ? 'user-message' : 'ai-message'"
           >
-            <div class="message-bubble" v-html="renderMarkdown(msg.content)"></div>
+            <div class="message-bubble" v-html="renderSimpleMarkdown(msg.content)"></div>
             <div class="message-meta" v-if="msg.role === 'assistant' && msg.source">
               <span class="source-badge" :class="msg.source">
                 {{ sourceLabel(msg.source) }}
@@ -105,6 +105,7 @@
 import { ref, nextTick, onMounted } from 'vue'
 import { IconDelete, IconSend } from '@arco-design/web-vue/es/icon'
 import api from '../api.js'
+import { renderSimpleMarkdown } from '../utils/format.js'
 
 const isOpen = ref(false)
 const inputText = ref('')
@@ -120,18 +121,6 @@ const clearHistory = () => { messages.value = [] }
 const sourceLabel = (source) => {
   const map = { ai: '🤖 AI回答', knowledge: '📚 知识库', fallback: '💡 建议' }
   return map[source] || source
-}
-
-// Simple markdown renderer (bold, lists, line breaks)
-const renderMarkdown = (text) => {
-  if (!text) return ''
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^/, '<p>')
-    .replace(/$/, '</p>')
-    .replace(/<p><\/p>/g, '')
 }
 
 const scrollToBottom = async () => {

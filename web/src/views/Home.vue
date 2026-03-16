@@ -172,6 +172,7 @@ import PageContainer from '../components/common/PageContainer.vue'
 import StatCard from '../components/common/StatCard.vue'
 import DataCard from '../components/common/DataCard.vue'
 import api from '../api'
+import { formatRelativeTime, getActivityIcon } from '../utils/format.js'
 
 const router = useRouter()
 
@@ -192,9 +193,9 @@ const recentActivities = ref([
 
 const loadSummary = async () => {
   try {
-    const res = await api.statistics.getSummary()
-    if (res?.data?.stats) {
-      const s = res.data.stats
+    const data = await api.statistics.getSummary()
+    if (data?.stats) {
+      const s = data.stats
       stats.value = {
         cropAnalysis: s.cropAnalysis || stats.value.cropAnalysis,
         energyPoints: s.totalGeneration || stats.value.energyPoints,
@@ -202,32 +203,14 @@ const loadSummary = async () => {
         wisdomRecords: s.wisdomRecords || stats.value.wisdomRecords
       }
     }
-    if (res?.data?.recentActivities?.length) {
-      recentActivities.value = res.data.recentActivities.map(a => ({
+    if (data?.recentActivities?.length) {
+      recentActivities.value = data.recentActivities.map(a => ({
         icon: getActivityIcon(a.action_type),
         title: a.action_data || a.action_type,
-        time: formatTime(a.created_at)
+        time: formatRelativeTime(a.created_at)
       }))
     }
   } catch {}
-}
-
-const getActivityIcon = (type) => {
-  const icons = { crop: '🌾', energy: '⚡', carbon: '🌍', wisdom: '📝', environment: '🌿' }
-  return icons[type] || '📋'
-}
-
-const formatTime = (ts) => {
-  if (!ts) return ''
-  const d = new Date(String(ts).replace(' ', 'T'))
-  if (isNaN(d.getTime())) return ''
-  const diff = Date.now() - d.getTime()
-  const m = Math.floor(diff / 60000)
-  if (m < 1) return '刚刚'
-  if (m < 60) return `${m}分钟前`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}小时前`
-  return `${Math.floor(h / 24)}天前`
 }
 
 const navigate = (path) => router.push(path)

@@ -11,6 +11,8 @@ mkdirSync(dbDir, { recursive: true });
 
 const db = new DatabaseSync(config.dbPath);
 
+// 基础表结构初始化
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -278,6 +280,26 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_crop_records_crop_type ON crop_records(crop_type);
   CREATE INDEX IF NOT EXISTS idx_crop_records_health_score ON crop_records(health_score);
   CREATE INDEX IF NOT EXISTS idx_crop_images_uploaded_at ON crop_images(uploaded_at);
+
+  CREATE TABLE IF NOT EXISTS custom_prompts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    name TEXT NOT NULL,
+    category TEXT DEFAULT '自定义',
+    template TEXT NOT NULL,
+    variables TEXT DEFAULT '[]',
+    use_count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+// 最小增量索引：支持报表幂等查询
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_reports_user_type_period
+  ON reports(user_id, report_type, report_period);
 `);
 
 export default db;

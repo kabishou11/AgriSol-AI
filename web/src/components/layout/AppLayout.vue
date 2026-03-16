@@ -16,7 +16,6 @@
         </div>
       </a-layout-content>
     </a-layout>
-    <AiChat />
   </a-layout>
 </template>
 
@@ -25,7 +24,6 @@ import { ref } from 'vue'
 import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
 import AppBreadcrumb from './AppBreadcrumb.vue'
-import AiChat from '../AiChat.vue'
 
 const collapsed = ref(false)
 

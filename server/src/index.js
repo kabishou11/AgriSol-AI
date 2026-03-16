@@ -56,7 +56,7 @@ function fixDates(obj) {
   const result = {};
   for (const [key, val] of Object.entries(obj)) {
     if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(val)) {
-      result[key] = val.replace(' ', 'T');
+      result[key] = formatDateToISO(val);
     } else if (val && typeof val === 'object') {
       result[key] = fixDates(val);
     } else {

@@ -4,8 +4,9 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
-import cropAnalysisService from '../services/crop-analysis.js'
 import db from '../database.js'
+import cropAnalysisService from '../services/crop-analysis.js'
+import { formatDateToISO } from '../utils/date-formatter.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pump = promisify(pipeline)
@@ -179,8 +180,8 @@ export default async function cropRoutes(fastify, options) {
         healthStatus: record.health_status,
         growthStage: record.growth_stage,
         imageUrl: record.image_path,
-        createdAt: record.created_at ? record.created_at.replace(' ', 'T') : null,
-        date: record.created_at ? new Date(record.created_at.replace(' ', 'T')).toLocaleDateString('zh-CN') : ''
+        createdAt: record.created_at ? formatDateToISO(record.created_at) : null,
+        date: record.created_at ? new Date(formatDateToISO(record.created_at)).toLocaleDateString('zh-CN') : ''
       }))
 
       const countQuery = `SELECT COUNT(*) as total FROM crop_records WHERE 1=1`

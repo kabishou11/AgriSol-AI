@@ -16,10 +16,19 @@
             :key="s.id"
             class="session"
             :class="{ active: s.id === sessionId }"
-            @click="sessionId = s.id"
           >
-            <div class="session-title">{{ s.title }}</div>
-            <div class="session-time">{{ formatTime(s.time) }}</div>
+            <div class="session-content" @click="sessionId = s.id">
+              <div class="session-title">{{ s.title }}</div>
+              <div class="session-time">{{ formatTime(s.time) }}</div>
+            </div>
+            <a-button
+              type="text"
+              size="mini"
+              class="delete-btn"
+              @click.stop="deleteSession(s.id)"
+            >
+              <icon-delete />
+            </a-button>
           </div>
         </div>
 
@@ -245,6 +254,24 @@ const clearChat = () => {
   save()
 }
 
+const deleteSession = (id) => {
+  if (sessions.value.length === 1) {
+    Message.warning('至少保留一个会话')
+    return
+  }
+  const idx = sessions.value.findIndex(s => s.id === id)
+  if (idx === -1) return
+
+  sessions.value.splice(idx, 1)
+  delete sessionMsgs.value[id]
+
+  if (sessionId.value === id) {
+    sessionId.value = sessions.value[0].id
+  }
+  save()
+  Message.success('会话已删除')
+}
+
 const exportChat = () => {
   const s = sessions.value.find(x => x.id === sessionId.value)
   const text = messages.value.map(m => `[${m.role === 'user' ? '我' : 'AI'}] ${m.text}`).join('\n\n')
@@ -352,13 +379,35 @@ onMounted(() => {
 .session {
   padding: 12px;
   border-radius: 8px;
-  cursor: pointer;
   margin-bottom: 4px;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .session:hover {
   background: #f7f8fa;
+}
+
+.session-content {
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: #86909c;
+}
+
+.session:hover .delete-btn {
+  opacity: 1;
+}
+
+.delete-btn:hover {
+  color: #f53f3f;
 }
 
 .session.active {

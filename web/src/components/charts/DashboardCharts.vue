@@ -39,7 +39,7 @@ const props = defineProps({
 });
 
 const chartOption = computed(() => {
-  const dates = props.data.map(item => item.date);
+  const dates = props.data.map(item => item.date || item.month);
 
   if (props.type === 'crops') {
     return {
@@ -112,7 +112,7 @@ const chartOption = computed(() => {
         axisPointer: { type: 'cross' }
       },
       legend: {
-        data: ['太阳能潜力', '风能潜力']
+        data: ['发电量', '用电量']
       },
       grid: {
         left: '3%',
@@ -131,9 +131,9 @@ const chartOption = computed(() => {
       },
       series: [
         {
-          name: '太阳能潜力',
+          name: '发电量',
           type: 'line',
-          data: props.data.map(item => item.solar || 0),
+          data: props.data.map(item => item.generation || item.solar || 0),
           smooth: true,
           areaStyle: {
             color: {
@@ -151,9 +151,9 @@ const chartOption = computed(() => {
           itemStyle: { color: '#ff7d00' }
         },
         {
-          name: '风能潜力',
+          name: '用电量',
           type: 'line',
-          data: props.data.map(item => item.wind || 0),
+          data: props.data.map(item => item.consumption || item.wind || 0),
           smooth: true,
           areaStyle: {
             color: {
@@ -199,7 +199,7 @@ const chartOption = computed(() => {
         {
           name: '碳排放',
           type: 'bar',
-          data: props.data.map(item => item.total || 0),
+          data: props.data.map(item => item.totalCarbonTons ?? item.total ?? item.value ?? 0),
           itemStyle: {
             color: {
               type: 'linear',

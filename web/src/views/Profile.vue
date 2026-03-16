@@ -122,7 +122,7 @@
                         :key="t.value"
                         class="theme-option"
                         :class="{ active: settings.theme === t.value }"
-                        @click="settings.theme = t.value; saveSettings()"
+                        @click="settings.theme = t.value; saveSettingsDebounced()"
                       >
                         <div class="theme-preview" :style="t.style"></div>
                         <span>{{ t.label }}</span>
@@ -132,7 +132,7 @@
 
                   <div class="settings-section" style="margin-top:24px">
                     <div class="section-title">语言</div>
-                    <a-radio-group v-model="settings.language" @change="saveSettings">
+                    <a-radio-group v-model="settings.language" @change="saveSettingsDebounced">
                       <a-radio value="zh">简体中文</a-radio>
                       <a-radio value="en">English</a-radio>
                     </a-radio-group>
@@ -140,7 +140,7 @@
 
                   <div class="settings-section" style="margin-top:24px">
                     <div class="section-title">隐私级别</div>
-                    <a-radio-group v-model="settings.privacy_level" @change="saveSettings">
+                    <a-radio-group v-model="settings.privacy_level" @change="saveSettingsDebounced">
                       <a-radio value="public">公开</a-radio>
                       <a-radio value="friends">仅好友</a-radio>
                       <a-radio value="private">私密</a-radio>
@@ -153,11 +153,11 @@
                     <div class="section-title">通知设置</div>
                     <div class="toggle-row">
                       <span>系统通知</span>
-                      <a-switch v-model="settings.notifications_enabled" @change="saveSettings" />
+                      <a-switch v-model="settings.notifications_enabled" @change="saveSettingsDebounced" />
                     </div>
                     <div class="toggle-row">
                       <span>邮件通知</span>
-                      <a-switch v-model="settings.email_notifications" @change="saveSettings" />
+                      <a-switch v-model="settings.email_notifications" @change="saveSettingsDebounced" />
                     </div>
                   </div>
 
@@ -189,39 +189,83 @@
                   </a-tooltip>
                 </div>
 
-                <div class="section-title" style="margin-top:20px">提示词管理</div>
+                <div class="section-title" style="margin-top:20px">
+                  系统提示词管理
+                  <a-button
+                    size="mini"
+                    type="primary"
+                    style="margin-left: 12px;"
+                    @click="showGeneratePromptModal = true"
+                  >
+                    <icon-robot /> AI生成提示词
+                  </a-button>
+                </div>
                 <p class="section-desc">选择并自定义各场景下AI助手的系统提示词，影响AI回答的风格和专业方向。</p>
 
                 <div class="prompt-list">
                   <div
-                    v-for="prompt in aiConfig.prompts"
+                    v-for="prompt in systemPrompts"
                     :key="prompt.id"
                     class="prompt-card"
-                    :class="{ active: prompt.active }"
                   >
                     <div class="prompt-header">
                       <div class="prompt-name">
-                        <span class="prompt-icon">{{ promptIcons[prompt.id] || '🤖' }}</span>
+                        <span class="prompt-icon">{{ prompt.icon || '🤖' }}</span>
                         {{ prompt.name }}
                       </div>
-                      <a-switch
-                        :model-value="prompt.active"
-                        size="small"
-                        @change="togglePrompt(prompt)"
-                      />
+                      <a-tag size="small" color="blue">系统预设</a-tag>
                     </div>
+                    <div class="prompt-desc">{{ prompt.description }}</div>
                     <a-textarea
-                      v-model="prompt.system"
-                      :auto-size="{ minRows: 2, maxRows: 4 }"
+                      :model-value="prompt.systemPrompt"
+                      :auto-size="{ minRows: 3, maxRows: 6 }"
                       class="prompt-textarea"
-                      placeholder="输入系统提示词..."
+                      readonly
+                      placeholder="系统提示词..."
                     />
-                    <div class="prompt-actions">
-                      <a-button size="mini" type="text" @click="resetPrompt(prompt)">重置默认</a-button>
-                      <a-button size="mini" type="primary" @click="savePrompt(prompt)">保存</a-button>
-                    </div>
                   </div>
                 </div>
+
+                <div class="section-title" style="margin-top:24px">
+                  自定义提示词
+                  <a-button
+                    size="mini"
+                    style="margin-left: 12px;"
+                    @click="showCreatePromptModal = true"
+                  >
+                    <icon-plus /> 新建
+                  </a-button>
+                </div>
+
+                <div class="prompt-list" v-if="customPrompts.length > 0">
+                  <div
+                    v-for="prompt in customPrompts"
+                    :key="prompt.id"
+                    class="prompt-card"
+                  >
+                    <div class="prompt-header">
+                      <div class="prompt-name">
+                        <span class="prompt-icon">✨</span>
+                        {{ prompt.name }}
+                      </div>
+                      <a-space size="mini">
+                        <a-button size="mini" type="text" @click="editCustomPrompt(prompt)">
+                          <icon-edit />
+                        </a-button>
+                        <a-button size="mini" type="text" status="danger" @click="deleteCustomPrompt(prompt.id)">
+                          <icon-delete />
+                        </a-button>
+                      </a-space>
+                    </div>
+                    <a-textarea
+                      :model-value="prompt.template"
+                      :auto-size="{ minRows: 2, maxRows: 4 }"
+                      class="prompt-textarea"
+                      readonly
+                    />
+                  </div>
+                </div>
+                <a-empty v-else description="暂无自定义提示词" style="margin: 20px 0;" />
 
                 <div class="section-title" style="margin-top:24px">模型配置</div>
                 <a-form layout="vertical" style="max-width:480px">
@@ -290,14 +334,86 @@
         </a-card>
       </a-col>
     </a-row>
+
+    <!-- AI生成提示词模态框 -->
+    <a-modal
+      v-model:visible="showGeneratePromptModal"
+      title="AI生成提示词"
+      @ok="generatePrompt"
+      :ok-loading="generating"
+      ok-text="生成"
+      width="600px"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="提示词用途" required>
+          <a-input
+            v-model="generateForm.purpose"
+            placeholder="例如：专业的农业病虫害诊断专家"
+          />
+        </a-form-item>
+        <a-form-item label="背景信息（可选）">
+          <a-textarea
+            v-model="generateForm.context"
+            :auto-size="{ minRows: 3, maxRows: 6 }"
+            placeholder="提供更多背景信息，帮助AI生成更精准的提示词..."
+          />
+        </a-form-item>
+        <a-form-item label="生成结果" v-if="generatedPrompt">
+          <a-textarea
+            v-model="generatedPrompt"
+            :auto-size="{ minRows: 4, maxRows: 10 }"
+            class="generated-prompt"
+          />
+          <a-button
+            size="small"
+            type="primary"
+            style="margin-top: 8px;"
+            @click="saveGeneratedAsCustom"
+          >
+            <icon-save /> 保存为自定义提示词
+          </a-button>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 创建/编辑自定义提示词模态框 -->
+    <a-modal
+      v-model:visible="showCreatePromptModal"
+      :title="editingPrompt ? '编辑提示词' : '创建自定义提示词'"
+      @ok="saveCustomPrompt"
+      :ok-loading="saving"
+      ok-text="保存"
+      width="600px"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="名称" required>
+          <a-input v-model="customPromptForm.name" placeholder="提示词名称" />
+        </a-form-item>
+        <a-form-item label="分类">
+          <a-input v-model="customPromptForm.category" placeholder="例如：作物分析" />
+        </a-form-item>
+        <a-form-item label="提示词内容" required>
+          <a-textarea
+            v-model="customPromptForm.template"
+            :auto-size="{ minRows: 6, maxRows: 12 }"
+            placeholder="输入系统提示词内容..."
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { IconDownload, IconInfoCircle } from '@arco-design/web-vue/es/icon'
+import { IconDownload, IconInfoCircle, IconRobot, IconPlus, IconEdit, IconDelete, IconSave } from '@arco-design/web-vue/es/icon'
+import { debounce } from '../utils/format.js'
+import axios from 'axios'
 import api from '../api.js'
+
+// 直接axios实例用于特殊请求
+const axiosApi = axios.create({ baseURL: '/api', timeout: 30000 })
 
 const activeTab = ref('info')
 const editMode = ref(false)
@@ -316,6 +432,21 @@ const settings = ref({
 
 const aiConfig = ref({ prompts: [], apiKeyConfigured: false })
 const aiModelConfig = ref({ provider: 'modelscope', model: 'Qwen/Qwen3.5-122B-A10B', temperature: 0.7, useKnowledgeBase: true })
+
+// 系统提示词和自定义提示词
+const systemPrompts = ref([])
+const customPrompts = ref([])
+
+// AI生成提示词
+const showGeneratePromptModal = ref(false)
+const generating = ref(false)
+const generateForm = ref({ purpose: '', context: '' })
+const generatedPrompt = ref('')
+
+// 自定义提示词
+const showCreatePromptModal = ref(false)
+const editingPrompt = ref(null)
+const customPromptForm = ref({ name: '', category: '', template: '' })
 
 const history = ref([])
 const historyTotal = ref(0)
@@ -403,9 +534,19 @@ const loadSettings = async () => {
 
 const loadAiConfig = async () => {
   try {
-    const data = await api.get('/api/user/ai-config', { params: { userId: 1 } }).then(r => r.data)
-    aiConfig.value = data
-  } catch {}
+    // 加载系统提示词
+    const systemRes = await api.prompts.getSystem()
+    systemPrompts.value = systemRes || []
+
+    // 加载自定义提示词
+    const customRes = await api.prompts.getCustom()
+    customPrompts.value = customRes || []
+
+    aiConfig.value.apiKeyConfigured = Boolean(systemPrompts.value.length || customPrompts.value.length)
+  } catch (e) {
+    aiConfig.value.apiKeyConfigured = false
+    console.error('加载AI配置失败:', e)
+  }
 }
 
 const loadHistory = async (page = 1) => {
@@ -443,10 +584,13 @@ const saveSettings = async () => {
   } catch { Message.error('保存设置失败') }
 }
 
+const saveSettingsDebounced = debounce(saveSettings, 600)
+
 const handleExport = async () => {
   exporting.value = true
   try {
-    const data = await api.get('/api/user/export', { params: { userId: 1 } }).then(r => r.data)
+    const res = await axiosApi.get('/user/export', { params: { userId: 1 } })
+    const data = res.data
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -465,9 +609,96 @@ const clearCache = () => {
   Message.success('本地缓存已清除')
 }
 
-const togglePrompt = (prompt) => { prompt.active = !prompt.active }
-const resetPrompt = (prompt) => { Message.info('已重置为默认提示词') }
-const savePrompt = (prompt) => { Message.success(`"${prompt.name}" 提示词已保存`) }
+// AI生成提示词
+const generatePrompt = async () => {
+  if (!generateForm.value.purpose) {
+    Message.warning('请输入提示词用途')
+    return
+  }
+
+  generating.value = true
+  try {
+    const res = await api.prompts.generate({
+      purpose: generateForm.value.purpose,
+      context: generateForm.value.context
+    })
+
+    if (res?.prompt) {
+      generatedPrompt.value = res.prompt
+      Message.success('提示词生成成功')
+    } else {
+      Message.error('生成失败，请重试')
+    }
+  } catch (error) {
+    Message.error('生成失败：' + (error.message || '服务暂时不可用'))
+  } finally {
+    generating.value = false
+  }
+}
+
+// 保存生成的提示词为自定义
+const saveGeneratedAsCustom = () => {
+  customPromptForm.value = {
+    name: generateForm.value.purpose,
+    category: '自定义',
+    template: generatedPrompt.value
+  }
+  showGeneratePromptModal.value = false
+  showCreatePromptModal.value = true
+  generateForm.value = { purpose: '', context: '' }
+  generatedPrompt.value = ''
+}
+
+// 保存自定义提示词
+const saveCustomPrompt = async () => {
+  if (!customPromptForm.value.name || !customPromptForm.value.template) {
+    Message.warning('请填写名称和内容')
+    return
+  }
+
+  saving.value = true
+  try {
+    if (editingPrompt.value) {
+      await api.prompts.updateCustom(editingPrompt.value.id, customPromptForm.value)
+      Message.success('提示词已更新')
+    } else {
+      await api.prompts.createCustom(customPromptForm.value)
+      Message.success('提示词已创建')
+    }
+
+    showCreatePromptModal.value = false
+    customPromptForm.value = { name: '', category: '', template: '' }
+    editingPrompt.value = null
+    await loadAiConfig()
+  } catch (error) {
+    Message.error('保存失败：' + (error.message || '未知错误'))
+  } finally {
+    saving.value = false
+  }
+}
+
+// 编辑自定义提示词
+const editCustomPrompt = (prompt) => {
+  editingPrompt.value = prompt
+  customPromptForm.value = {
+    name: prompt.name,
+    category: prompt.category || '',
+    template: prompt.template
+  }
+  showCreatePromptModal.value = true
+}
+
+// 删除自定义提示词
+const deleteCustomPrompt = async (id) => {
+  try {
+    await api.prompts.deleteCustom(id)
+    Message.success('提示词已删除')
+    await loadAiConfig()
+  } catch (error) {
+    Message.error('删除失败')
+  }
+}
+
 const saveAiModelConfig = () => { Message.success('AI配置已保存') }
 
 onMounted(() => {
@@ -479,88 +710,472 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.profile-page { padding: 0; }
+.profile-page {
+  padding: 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 100%);
+  min-height: calc(100vh - 64px);
+}
 
-.user-card { text-align: center; }
-.avatar-section { padding: 8px 0 16px; }
-.avatar-wrap { position: relative; display: inline-block; margin-bottom: 12px; }
-.user-avatar { background: linear-gradient(135deg, #165dff, #0fc6c2); }
+/* 用户卡片 */
+.user-card {
+  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  border: none;
+}
+
+.user-card :deep(.arco-card-body) {
+  padding: 32px 24px;
+}
+
+.avatar-section {
+  padding: 8px 0 20px;
+}
+
+.avatar-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.user-avatar {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
 .avatar-badge {
-  position: absolute; bottom: 0; right: 0;
-  width: 28px; height: 28px; border-radius: 50%;
-  background: white; display: flex; align-items: center; justify-content: center;
-  font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00b42a, #0fc6c2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 3px solid white;
 }
-.user-name { font-size: 20px; font-weight: 700; margin: 0 0 4px; color: #1d2129; }
-.user-email { color: #86909c; font-size: 13px; margin: 0 0 8px; }
-.user-meta { display: flex; justify-content: center; gap: 12px; font-size: 13px; color: #4e5969; flex-wrap: wrap; }
 
+.user-name {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 8px 0;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-email {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 4px 0 12px;
+}
+
+.user-meta {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.95);
+  margin-top: 8px;
+}
+
+.user-meta span {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.user-card :deep(.arco-tag) {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.user-card :deep(.arco-divider) {
+  border-color: rgba(255, 255, 255, 0.2);
+  margin: 24px 0;
+}
+
+/* 统计网格 */
 .stats-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 16px;
 }
-.stat-cell { text-align: center; padding: 10px 4px; border-radius: 8px; background: #f7f8fa; }
-.stat-num { font-size: 20px; font-weight: 700; }
-.stat-num.green { color: #00b42a; }
-.stat-num.orange { color: #ff7d00; }
-.stat-num.blue { color: #165dff; }
-.stat-num.purple { color: #722ed1; }
-.stat-num.teal { color: #0fc6c2; }
-.stat-num.red { color: #f53f3f; }
-.stat-lbl { font-size: 11px; color: #86909c; margin-top: 2px; }
 
-.main-card :deep(.arco-tabs-content) { padding-top: 16px; }
+.stat-cell {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 16px 12px;
+  border-radius: 12px;
+  transition: all 0.3s;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
-.settings-section { }
-.section-title { font-size: 14px; font-weight: 600; color: #1d2129; margin-bottom: 12px; }
-.section-desc { font-size: 13px; color: #86909c; margin-bottom: 16px; }
+.stat-cell:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 
-.theme-picker { display: flex; gap: 12px; }
+.stat-num {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: white;
+}
+
+.stat-lbl {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+/* 快捷操作卡片 */
+.quick-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: none;
+  background: white;
+}
+
+.quick-card :deep(.arco-card-header) {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 20px;
+}
+
+.quick-card :deep(.arco-card-body) {
+  padding: 16px 20px;
+}
+
+.quick-card :deep(.arco-btn) {
+  justify-content: flex-start;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.quick-card :deep(.arco-btn:hover) {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.quick-card :deep(.arco-btn-primary) {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+}
+
+/* 主卡片 */
+.main-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: none;
+  background: white;
+}
+
+.main-card :deep(.arco-card-body) {
+  padding: 0;
+}
+
+.main-card :deep(.arco-tabs) {
+  padding: 0;
+}
+
+.main-card :deep(.arco-tabs-nav) {
+  padding: 0 24px;
+  background: linear-gradient(to bottom, #fafafa, white);
+}
+
+.main-card :deep(.arco-tabs-content) {
+  padding: 24px;
+}
+
+.main-card :deep(.arco-tabs-tab) {
+  font-weight: 600;
+  font-size: 15px;
+  padding: 16px 20px;
+}
+
+/* 表单样式 */
+.main-card :deep(.arco-form-item-label-col) {
+  font-weight: 600;
+  color: #1d2129;
+}
+
+.main-card :deep(.arco-input),
+.main-card :deep(.arco-input-number),
+.main-card :deep(.arco-select-view) {
+  border-radius: 8px;
+  border-color: #e5e6eb;
+}
+
+.main-card :deep(.arco-input:focus),
+.main-card :deep(.arco-input-number:focus),
+.main-card :deep(.arco-select-view-focus) {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.main-card :deep(.arco-btn-primary) {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* 设置部分 */
+.settings-section {
+  background: #fafafa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e5e6eb;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1d2129;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 2px;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: #86909c;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.theme-picker {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .theme-option {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  cursor: pointer; padding: 8px; border-radius: 8px; border: 2px solid transparent;
-  transition: all 0.2s;
+  flex: 1;
+  padding: 12px;
+  border: 2px solid #e5e6eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
 }
-.theme-option.active { border-color: #165dff; background: #e8f3ff; }
-.theme-preview { width: 48px; height: 32px; border-radius: 6px; border: 1px solid #e5e6eb; }
-.theme-option span { font-size: 12px; color: #4e5969; }
 
-.toggle-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 0; border-bottom: 1px solid #f2f3f5;
+.theme-option:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
-.toggle-row:last-child { border-bottom: none; }
 
-/* AI Config */
-.ai-config-section { }
+.theme-option.active {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f0f5ff, #faf5ff);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.theme-preview {
+  width: 100%;
+  height: 60px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.theme-option span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4e5969;
+}
+
+.theme-option.active span {
+  color: #667eea;
+}
+
+/* AI配置 */
+.ai-config-section {
+  background: linear-gradient(to bottom, #fafafa, white);
+  padding: 24px;
+  border-radius: 12px;
+  margin: -24px;
+}
+
 .api-status-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px; border-radius: 8px; background: #f7f8fa;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: white;
+  border: 2px solid #e5e6eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
-.status-indicator { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
-.status-indicator.online { color: #00b42a; }
-.status-indicator.offline { color: #86909c; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-.status-indicator.online .dot { box-shadow: 0 0 6px currentColor; animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-.prompt-list { display: flex; flex-direction: column; gap: 12px; }
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status-indicator.online {
+  color: #00b42a;
+}
+
+.status-indicator.offline {
+  color: #86909c;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-indicator.online .dot {
+  box-shadow: 0 0 8px currentColor;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.prompt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
 .prompt-card {
-  border: 1px solid #e5e6eb; border-radius: 10px; padding: 14px;
-  transition: all 0.2s; background: #fafafa;
+  border: 2px solid #e5e6eb;
+  border-radius: 12px;
+  padding: 18px;
+  transition: all 0.3s;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
-.prompt-card.active { border-color: #165dff; background: #f0f5ff; }
-.prompt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.prompt-name { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-.prompt-icon { font-size: 16px; }
-.prompt-textarea :deep(.arco-textarea) { font-size: 13px; background: white; }
-.prompt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
-/* History */
-.history-item { padding: 2px 0 8px; }
-.history-header { display: flex; justify-content: space-between; align-items: center; }
-.history-type { font-weight: 500; font-size: 14px; color: #1d2129; }
-.history-time { font-size: 12px; color: #86909c; }
-.history-detail { font-size: 13px; color: #4e5969; margin-top: 4px; }
+.prompt-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
 
-.quick-card :deep(.arco-btn) { justify-content: flex-start; }
+.prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.prompt-name {
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1d2129;
+}
+
+.prompt-icon {
+  font-size: 20px;
+}
+
+.prompt-desc {
+  font-size: 13px;
+  color: #86909c;
+  margin-bottom: 12px;
+  line-height: 1.6;
+  padding-left: 28px;
+}
+
+.prompt-textarea :deep(.arco-textarea) {
+  font-size: 13px;
+  background: #f7f8fa;
+  line-height: 1.6;
+  border-radius: 8px;
+  border-color: #e5e6eb;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.generated-prompt :deep(.arco-textarea) {
+  background: linear-gradient(135deg, #f0f5ff, #faf5ff);
+  border-color: #667eea;
+  font-family: 'Consolas', monospace;
+  line-height: 1.6;
+}
+
+/* 历史记录 */
+.history-item {
+  padding: 4px 0 12px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-type {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1d2129;
+}
+
+.history-time {
+  font-size: 12px;
+  color: #86909c;
+}
+
+.history-detail {
+  font-size: 13px;
+  color: #4e5969;
+  margin-top: 6px;
+  padding-left: 12px;
+  border-left: 3px solid #e5e6eb;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .theme-picker {
+    flex-direction: column;
+  }
+}
 </style>

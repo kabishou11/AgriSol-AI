@@ -153,16 +153,52 @@ export const animateNumber = (el, from, to, duration = 1000) => {
 }
 
 /**
+ * 安全转义 HTML
+ */
+export const escapeHtml = (text = '') => String(text)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;')
+
+/**
+ * 安全渲染简易 Markdown（粗体/斜体/行内代码/列表/换行）
+ */
+export const renderSimpleMarkdown = (text = '') => {
+  const safe = escapeHtml(text)
+  return safe
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^(\d+)\.\s+(.+)$/gm, '<div class="md-list-item">$1. $2</div>')
+    .replace(/^[-*]\s+(.+)$/gm, '<div class="md-list-item">• $1</div>')
+    .replace(/\n/g, '<br>')
+}
+
+/**
  * 获取活动类型图标
  */
 export const getActivityIcon = (type) => {
   const icons = {
+    crop: '🌾',
     crop_analyze: '🌾',
+    crop_analysis: '🌾',
+    energy: '⚡',
     energy_record: '⚡',
+    energy_prediction: '⚡',
+    carbon: '🌍',
     carbon_calculate: '🌍',
+    carbon_calculation: '🌍',
+    wisdom: '📝',
     wisdom_record: '📝',
+    environment: '🌱',
     environment_record: '🌱',
-    family_update: '👨‍👩‍👧‍👦'
+    family_update: '👨‍👩‍👧‍👦',
+    profile_update: '👤',
+    settings_update: '⚙️',
+    ai_chat: '🤖'
   }
   return icons[type] || '📋'
 }

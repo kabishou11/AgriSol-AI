@@ -22,6 +22,11 @@
         数据仪表板
       </a-menu-item>
 
+      <a-menu-item key="ai-chat">
+        <template #icon><span style="font-size:16px">🤖</span></template>
+        AI问答
+      </a-menu-item>
+
       <a-divider style="margin: 8px 0;" />
 
       <a-menu-item key="crop">

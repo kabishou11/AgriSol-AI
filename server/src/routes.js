@@ -6,13 +6,9 @@ import familyRoutes from './routes/family.js';
 import cropRoutes from './routes/crop.js';
 import aiRoutes from './routes/ai.js';
 import graphRoutes from './routes/graph.js';
-import { mkdir } from 'fs/promises';
-import { join } from 'path';
+import promptRoutes from './routes/prompts.js';
 
 export default async function routes(fastify) {
-  await mkdir(join(process.cwd(), 'uploads/audio'), { recursive: true });
-  await mkdir(join(process.cwd(), 'uploads/crops'), { recursive: true });
-
   await fastify.register(carbonRoutes);
   await fastify.register(environmentRoutes);
   await fastify.register(energyRoutes);
@@ -21,4 +17,5 @@ export default async function routes(fastify) {
   await fastify.register(cropRoutes, { prefix: '/api/crops' });
   await fastify.register(aiRoutes);
   await fastify.register(graphRoutes);
+  await fastify.register(promptRoutes);
 }

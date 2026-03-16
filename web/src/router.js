@@ -10,10 +10,12 @@ import Wisdom from './views/Wisdom.vue'
 import Knowledge from './views/Knowledge.vue'
 import KnowledgeGraph from './views/KnowledgeGraph.vue'
 import Family from './views/Family.vue'
+import AiChat from './views/AiChat.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/dashboard', name: 'Dashboard', component: Dashboard },
+  { path: '/ai-chat', name: 'AiChat', component: AiChat },
   { path: '/profile', name: 'Profile', component: Profile },
   { path: '/crop', name: 'Crop', component: Crop },
   { path: '/energy', name: 'Energy', component: Energy },

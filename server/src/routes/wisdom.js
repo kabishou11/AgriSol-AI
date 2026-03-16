@@ -1,6 +1,7 @@
 import db from '../database.js';
 import { organizeWisdomText, extractKeywords, calculatePoints } from '../services/knowledge-base.js';
-import { writeFile } from 'fs/promises';
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
 import { join } from 'path';
 
 export default async function wisdomRoutes(fastify) {
@@ -52,10 +53,10 @@ export default async function wisdomRoutes(fastify) {
 
   fastify.post('/api/wisdom/record-audio', async (request, reply) => {
     const data = await request.file();
-    const buffer = await data.toBuffer();
 
     const audioPath = `uploads/audio/${Date.now()}.webm`;
-    await writeFile(join(process.cwd(), audioPath), buffer);
+    const absoluteAudioPath = join(process.cwd(), audioPath);
+    await pipeline(data.file, createWriteStream(absoluteAudioPath));
 
     const { title, content, tags, category, memberId, duration } = request.body || {};
 
