@@ -248,7 +248,9 @@
                   {{ item.healthScore >= 80 ? '健康' : item.healthScore >= 60 ? '一般' : '异常' }}
                 </a-tag>
               </div>
+              <p class="history-stage" v-if="item.growthStage">{{ item.growthStage }}</p>
               <p class="history-date">{{ item.date }}</p>
+              <p class="history-hint">点击查看详情</p>
             </div>
           </div>
         </div>
@@ -907,6 +909,21 @@ onMounted(() => {
   font-size: 12px;
   color: #86909c;
   margin: 0;
+}
+.history-stage {
+  font-size: 12px;
+  color: #4e5969;
+  margin: 4px 0 0;
+}
+.history-hint {
+  font-size: 11px;
+  color: #86909c;
+  margin: 6px 0 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.history-item:hover .history-hint {
+  opacity: 1;
 }
 
 /* 详情模态框 */
