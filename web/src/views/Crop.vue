@@ -129,8 +129,17 @@
     <!-- 分析结果 -->
     <a-card v-if="analysisResult" class="result-card" :bordered="false">
       <template #title>
-        <span>📊 分析结果</span>
-        <a-tag color="green" style="margin-left: 12px">分析完成</a-tag>
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span>📊 分析结果</span>
+            <a-tag color="green" style="margin-left: 12px">分析完成</a-tag>
+          </div>
+          <div v-if="analysisResult._performance" style="display: flex; gap: 8px; font-size: 13px;">
+            <a-tag>⏱️ {{ analysisResult._performance.duration }}ms</a-tag>
+            <a-tag>🔢 {{ analysisResult._performance.tokensUsed }} tokens</a-tag>
+            <a-tag>⚡ {{ analysisResult._performance.tokensPerSecond }} t/s</a-tag>
+          </div>
+        </div>
       </template>
 
       <!-- AI总结 -->

@@ -38,6 +38,8 @@ export async function analyzeCropImageStructured(imageBase64, userNote = '') {
     return null;
   }
 
+  const startTime = Date.now();
+
   try {
     let promptText = '请分析这张作物图片，识别作物类型、生长阶段、病虫害情况，并评估健康状况。';
 
@@ -66,12 +68,24 @@ export async function analyzeCropImageStructured(imageBase64, userNote = '') {
       temperature: 0.3
     });
 
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
     const content = response.choices[0].message.content;
     const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    return null;
+
+    const result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+
+    return {
+      ...result,
+      _performance: {
+        duration,
+        tokensUsed: response.usage?.total_tokens || 0,
+        promptTokens: response.usage?.prompt_tokens || 0,
+        completionTokens: response.usage?.completion_tokens || 0,
+        tokensPerSecond: response.usage?.total_tokens ? Math.round(response.usage.total_tokens / (duration / 1000)) : 0
+      }
+    };
   } catch (error) {
     console.error('AI structured analysis error:', error);
     return null;
