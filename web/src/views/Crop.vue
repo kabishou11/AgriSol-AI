@@ -255,6 +255,46 @@
         <a-empty v-else description="暂无历史记录" />
       </a-spin>
     </a-card>
+
+    <!-- 详情模态框 -->
+    <a-modal v-model:visible="detailVisible" :width="800" :footer="false" title="分析详情">
+      <a-spin :loading="detailLoading">
+        <div v-if="detailData" class="detail-content">
+          <div v-if="detailData.image_path" class="detail-image">
+            <img :src="detailData.image_path" alt="作物图片" />
+          </div>
+          <a-descriptions :column="2" bordered>
+            <a-descriptions-item label="作物类型">{{ detailData.crop_type }}</a-descriptions-item>
+            <a-descriptions-item label="健康评分">
+              <span :style="{ color: getScoreColor(detailData.health_score), fontWeight: 'bold' }">
+                {{ detailData.health_score }}分
+              </span>
+            </a-descriptions-item>
+            <a-descriptions-item label="健康状态">
+              <a-tag :color="detailData.health_score >= 80 ? 'green' : detailData.health_score >= 60 ? 'orange' : 'red'">
+                {{ detailData.health_status }}
+              </a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item label="生长阶段">{{ detailData.growth_stage }}</a-descriptions-item>
+            <a-descriptions-item label="分析时间" :span="2">{{ detailData.created_at }}</a-descriptions-item>
+          </a-descriptions>
+
+          <div v-if="detailData.pests_detected?.length" class="detail-section">
+            <h4>🐛 检测到的病虫害</h4>
+            <a-space wrap>
+              <a-tag v-for="(pest, i) in detailData.pests_detected" :key="i" color="red">{{ pest }}</a-tag>
+            </a-space>
+          </div>
+
+          <div v-if="detailData.recommendations?.length" class="detail-section">
+            <h4>💡 养护建议</h4>
+            <a-timeline>
+              <a-timeline-item v-for="(rec, i) in detailData.recommendations" :key="i">{{ rec }}</a-timeline-item>
+            </a-timeline>
+          </div>
+        </div>
+      </a-spin>
+    </a-modal>
   </div>
 </template>
 
@@ -278,6 +318,9 @@ const progressColor = ref('#165dff')
 const analysisResult = ref(null)
 const historyList = ref([])
 const historyLoading = ref(false)
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detailData = ref(null)
 
 const progressSteps = [
   { percent: 0, icon: '📤', text: '上传图片' },
@@ -410,7 +453,7 @@ const loadHistory = async () => {
   historyLoading.value = true
   try {
     const res = await api.crop.getHistory({ limit: 12 })
-    historyList.value = (res.data || res || []).map(item => ({
+    historyList.value = (res || []).map(item => ({
       id: item.id,
       cropType: item.cropType,
       healthScore: item.healthScore ?? 0,
@@ -435,8 +478,19 @@ const loadStatistics = async () => {
   }
 }
 
-const viewHistoryDetail = (item) => {
-  Message.info(`查看 ${item.cropType || '作物'} 详情功能开发中`)
+const viewHistoryDetail = async (item) => {
+  detailVisible.value = true
+  detailLoading.value = true
+  detailData.value = null
+  try {
+    const res = await api.crop.getRecord(item.id)
+    detailData.value = res.data || res
+  } catch (error) {
+    Message.error('加载详情失败')
+    detailVisible.value = false
+  } finally {
+    detailLoading.value = false
+  }
 }
 
 // ---- 工具函数 ----
@@ -853,6 +907,30 @@ onMounted(() => {
   font-size: 12px;
   color: #86909c;
   margin: 0;
+}
+
+/* 详情模态框 */
+.detail-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.detail-image {
+  margin-bottom: 16px;
+  text-align: center;
+}
+.detail-image img {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+}
+.detail-section {
+  margin-top: 20px;
+}
+.detail-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: #1d2129;
 }
 
 /* 响应式 */

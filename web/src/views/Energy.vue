@@ -1,231 +1,154 @@
 <template>
   <div class="energy-page">
-    <!-- Header Stats -->
+    <a-page-header title="能源经营决策页" subtitle="全国通用 + 寿光样板 + 用户录入三口径" />
+
+    <a-card class="decision-bar" :bordered="false">
+      <template #title>口径与地区</template>
+      <a-row :gutter="12" align="center">
+        <a-col :xs="24" :md="10">
+          <a-space>
+            <span class="label">模式</span>
+            <a-radio-group v-model="mode" type="button" @change="handleModeChange">
+              <a-radio value="national">全国通用</a-radio>
+              <a-radio value="shouguang">寿光样板</a-radio>
+            </a-radio-group>
+          </a-space>
+        </a-col>
+        <a-col :xs="24" :md="8">
+          <a-space>
+            <span class="label">地区代码</span>
+            <a-input v-model="regionCode" allow-clear placeholder="例如 SD-WF-SG" style="width: 180px" />
+          </a-space>
+        </a-col>
+        <a-col :xs="24" :md="6" style="text-align: right">
+          <a-space>
+            <a-tag color="blue">{{ overview.regionName || regionName }}</a-tag>
+            <a-button type="primary" :loading="loading.overview" @click="loadOverview">
+              <template #icon><icon-refresh /></template>
+              刷新口径
+            </a-button>
+          </a-space>
+        </a-col>
+      </a-row>
+      <div class="decision-note">
+        三口径说明：<b>模型估算</b>用于快速判断，<b>寿光样板</b>用于跨区对照，<b>用户录入</b>作为经营复盘依据。
+      </div>
+    </a-card>
+
     <a-row :gutter="16" class="stats-row">
-      <a-col :xs="24" :sm="12" :md="6">
-        <a-card class="stat-card generation">
-          <a-statistic
-            title="今日发电"
-            :value="todayData.generation"
-            suffix="kWh"
-            :precision="2"
-          >
-            <template #prefix>
-              <icon-sun-fill :style="{ color: '#FFC107' }" />
-            </template>
-          </a-statistic>
-          <div class="stat-trend">
-            <icon-arrow-up v-if="trends.generation > 0" />
-            <icon-arrow-down v-else />
-            <span>{{ Math.abs(trends.generation) }}% 较昨日</span>
+      <a-col :xs="24" :sm="12" :md="6" v-for="card in decisionCards" :key="card.key">
+        <a-card class="stat-card">
+          <a-statistic :title="card.title" :value="card.value" :precision="card.precision || 1" :suffix="card.suffix" />
+          <div class="stat-subtitle">{{ card.subtitle }}</div>
+        </a-card>
+      </a-col>
+    </a-row>
+
+    <a-row :gutter="16" class="caliber-row">
+      <a-col :xs="24" :lg="8" v-for="caliber in calibers" :key="caliber.key">
+        <a-card :title="caliber.label" class="caliber-card" :bordered="false">
+          <div class="caliber-metrics">
+            <div class="metric-item">
+              <span>发电</span>
+              <strong>{{ formatNumber(caliber.data.generationKwh, 2) }} kWh</strong>
+            </div>
+            <div class="metric-item">
+              <span>用电</span>
+              <strong>{{ formatNumber(caliber.data.consumptionKwh, 2) }} kWh</strong>
+            </div>
+            <div class="metric-item">
+              <span>自给率</span>
+              <strong>{{ formatNumber(caliber.data.selfSufficiencyPct, 1) }}%</strong>
+            </div>
+            <div class="metric-item">
+              <span>节省</span>
+              <strong>{{ formatNumber(caliber.data.savingsYuan, 2) }} 元</strong>
+            </div>
           </div>
-        </a-card>
-      </a-col>
-
-      <a-col :xs="24" :sm="12" :md="6">
-        <a-card class="stat-card consumption">
-          <a-statistic
-            title="今日用电"
-            :value="todayData.consumption"
-            suffix="kWh"
-            :precision="2"
-          >
-            <template #prefix>
-              <icon-thunderbolt :style="{ color: '#2196F3' }" />
-            </template>
-          </a-statistic>
-          <div class="stat-trend">
-            <icon-arrow-up v-if="trends.consumption > 0" />
-            <icon-arrow-down v-else />
-            <span>{{ Math.abs(trends.consumption) }}% 较昨日</span>
-          </div>
-        </a-card>
-      </a-col>
-
-      <a-col :xs="24" :sm="12" :md="6">
-        <a-card class="stat-card self-sufficiency">
-          <a-statistic
-            title="能源自给率"
-            :value="todayData.selfSufficiency"
-            suffix="%"
-            :precision="1"
-          >
-            <template #prefix>
-              <icon-check-circle-fill :style="{ color: '#4CAF50' }" />
-            </template>
-          </a-statistic>
-          <a-progress
-            :percent="parseFloat(todayData.selfSufficiency)"
-            :stroke-color="{
-              '0%': '#4CAF50',
-              '100%': '#8BC34A'
-            }"
-            :show-text="false"
-            class="progress-bar"
-          />
-        </a-card>
-      </a-col>
-
-      <a-col :xs="24" :sm="12" :md="6">
-        <a-card class="stat-card savings">
-          <a-statistic
-            title="今日节省"
-            :value="todayData.savings"
-            suffix="元"
-            :precision="2"
-          >
-            <template #prefix>
-              <icon-gift :style="{ color: '#FF9800' }" />
-            </template>
-          </a-statistic>
-          <div class="stat-info">
-            累计节省 {{ totalSavings }} 元
+          <div class="caliber-status">{{ caliber.data.statusLabel || '—' }}</div>
+          <div class="caliber-meta">
+            <a-tag size="small" color="blue">来源: {{ caliber.meta.caliberLabel || caliber.meta.sourceType || '-' }}</a-tag>
+            <a-tag size="small" color="green">置信度: {{ confidencePercent(caliber.meta.confidence) }}</a-tag>
+            <a-tag size="small" color="purple">更新时间: {{ formatDateTime(caliber.meta.updatedAt) }}</a-tag>
           </div>
         </a-card>
       </a-col>
     </a-row>
 
-    <!-- Main Content -->
-    <a-row :gutter="16" class="content-row">
-      <!-- Left Column -->
+    <a-row :gutter="16" class="main-row">
       <a-col :xs="24" :lg="16">
-        <!-- Generation Forecast -->
-        <a-card title="发电预测" class="forecast-card" :loading="loading.forecast">
-          <template #extra>
-            <a-space>
-              <a-tag color="blue">未来7天</a-tag>
-              <a-button type="text" size="small" @click="refreshForecast">
-                <icon-refresh />
-              </a-button>
-            </a-space>
-          </template>
-
-          <div v-if="forecast.daily && forecast.daily.length > 0">
-            <a-row :gutter="16" class="forecast-summary">
-              <a-col :span="8">
-                <div class="forecast-item">
-                  <div class="label">预计总发电</div>
-                  <div class="value">{{ forecast.total }} kWh</div>
-                </div>
-              </a-col>
-              <a-col :span="8">
-                <div class="forecast-item">
-                  <div class="label">日均发电</div>
-                  <div class="value">{{ forecast.averageDaily }} kWh</div>
-                </div>
-              </a-col>
-              <a-col :span="8">
-                <div class="forecast-item">
-                  <div class="label">预计收益</div>
-                  <div class="value">{{ (forecast.total * 0.5).toFixed(2) }} 元</div>
-                </div>
-              </a-col>
-            </a-row>
-
-            <a-table
-              :columns="forecastColumns"
-              :data="forecast.daily"
-              :pagination="false"
-              class="forecast-table"
-            >
-              <template #date="{ record }">
-                {{ formatDate(record.date) }}
-              </template>
-              <template #generation="{ record }">
-                <a-tag color="orange">{{ record.generation }} kWh</a-tag>
-              </template>
-              <template #sunshine="{ record }">
-                {{ record.sunshineHours }} 小时
-              </template>
-              <template #weather="{ record }">
-                <a-space>
-                  <icon-sun-fill v-if="record.cloudCover < 30" style="color: #FFC107" />
-                  <icon-cloud v-else-if="record.cloudCover < 70" style="color: #9E9E9E" />
-                  <icon-cloud v-else style="color: #607D8B" />
-                  <span>{{ record.cloudCover }}%</span>
-                </a-space>
-              </template>
-            </a-table>
-          </div>
-          <a-empty v-else description="暂无预测数据" />
-        </a-card>
-
-        <!-- Charts -->
         <energy-charts
           :generation-data="chartData.generation"
           :consumption-data="chartData.consumption"
           :current-power="currentPower"
           :max-power="maxPower"
-          class="charts-section"
         />
       </a-col>
-
-      <!-- Right Column -->
       <a-col :xs="24" :lg="8">
-        <!-- Optimization Recommendations -->
-        <a-card title="优化建议" class="recommendations-card" :loading="loading.recommendations">
-          <a-empty v-if="recommendations.length === 0" description="暂无建议" />
-          <a-space direction="vertical" :size="12" v-else style="width: 100%">
-            <a-alert
-              v-for="(rec, index) in recommendations"
-              :key="index"
-              :type="rec.type"
-              :title="rec.title"
-              :description="rec.description"
-              show-icon
-            >
-              <template #icon>
-                <icon-exclamation-circle-fill v-if="rec.priority === 'high'" />
-                <icon-info-circle-fill v-else-if="rec.priority === 'medium'" />
-                <icon-check-circle-fill v-else />
-              </template>
-            </a-alert>
-          </a-space>
+        <a-card title="自动解释" :bordered="false" class="interpret-card">
+          <a-alert v-for="(item, idx) in autoInsights" :key="idx" :type="item.type" :title="item.title" :description="item.desc" show-icon />
         </a-card>
+      </a-col>
+    </a-row>
 
-        <!-- Energy Storage Recommendations -->
-        <a-card title="储能建议" class="storage-card" :loading="loading.storage">
+    <a-collapse :default-active-key="['time-series']" class="detail-collapse">
+      <a-collapse-item key="forecast" header="预测明细（用于短期排班与调度）">
+        <a-card :bordered="false" :loading="loading.forecast">
+          <a-row :gutter="12" class="forecast-summary">
+            <a-col :span="8">
+              <div class="summary-item">
+                <div class="label">预测总发电</div>
+                <div class="value">{{ forecast.total || 0 }} kWh</div>
+              </div>
+            </a-col>
+            <a-col :span="8">
+              <div class="summary-item">
+                <div class="label">平均日发电</div>
+                <div class="value">{{ forecast.averageDaily || 0 }} kWh</div>
+              </div>
+            </a-col>
+            <a-col :span="8">
+              <div class="summary-item">
+                <div class="label">预测日数</div>
+                <div class="value">{{ forecast.daily?.length || 0 }} 天</div>
+              </div>
+            </a-col>
+          </a-row>
+          <a-table :columns="forecastColumns" :data="forecast.daily || []" :pagination="false" size="small">
+            <template #generation="{ record }">{{ record.generation }} kWh</template>
+            <template #sunshine="{ record }">{{ record.sunshineHours }} 小时</template>
+            <template #weather="{ record }">{{ record.cloudCover }}%</template>
+          </a-table>
+        </a-card>
+      </a-collapse-item>
+
+      <a-collapse-item key="time-series" header="时序预测（用于中短期走势判断）">
+        <time-series-prediction :historical-data="chartData.generation" />
+      </a-collapse-item>
+
+      <a-collapse-item key="storage" header="储能建议（用于设备投资评估）">
+        <a-card :bordered="false">
           <a-descriptions :column="1" bordered>
-            <a-descriptions-item label="建议容量">
-              {{ storageRecommendations.recommendedCapacity }} kWh
-            </a-descriptions-item>
-            <a-descriptions-item label="多余发电">
-              {{ storageRecommendations.excessGeneration }} kWh
-            </a-descriptions-item>
-            <a-descriptions-item label="电力缺口">
-              {{ storageRecommendations.deficit }} kWh
-            </a-descriptions-item>
-            <a-descriptions-item label="回本周期">
-              {{ storageRecommendations.paybackPeriod }} 年
-            </a-descriptions-item>
-            <a-descriptions-item label="年节省">
-              {{ storageRecommendations.estimatedSavings }} 元
-            </a-descriptions-item>
+            <a-descriptions-item label="建议容量">{{ storageRecommendations.recommendedCapacity }} kWh</a-descriptions-item>
+            <a-descriptions-item label="多余发电">{{ storageRecommendations.excessGeneration }} kWh</a-descriptions-item>
+            <a-descriptions-item label="电力缺口">{{ storageRecommendations.deficit }} kWh</a-descriptions-item>
+            <a-descriptions-item label="回本周期">{{ storageRecommendations.paybackPeriod }} 年</a-descriptions-item>
+            <a-descriptions-item label="预计年节省">{{ storageRecommendations.estimatedSavings }} 元</a-descriptions-item>
           </a-descriptions>
         </a-card>
+      </a-collapse-item>
 
-        <!-- Equipment Management -->
-        <a-card title="设备管理" class="devices-card">
+      <a-collapse-item key="devices" header="设备管理（用于资产台账维护）">
+        <a-card :bordered="false">
           <template #extra>
             <a-button type="primary" size="small" @click="showAddDevice = true">
               <icon-plus /> 添加设备
             </a-button>
           </template>
-
           <a-list :data="devices" :loading="loading.devices">
             <template #item="{ item }">
               <a-list-item>
-                <a-list-item-meta
-                  :title="item.device_name"
-                  :description="`容量: ${item.capacity} kW`"
-                >
-                  <template #avatar>
-                    <a-avatar>
-                      <icon-sun-fill v-if="item.device_type === 'solar'" />
-                      <icon-thunderbolt v-else />
-                    </a-avatar>
-                  </template>
-                </a-list-item-meta>
+                <a-list-item-meta :title="item.device_name" :description="`容量: ${item.capacity || 0} kW`" />
                 <template #actions>
                   <a-tag :color="item.status === 'active' ? 'green' : 'red'">
                     {{ item.status === 'active' ? '运行中' : '已停用' }}
@@ -235,10 +158,9 @@
             </template>
           </a-list>
         </a-card>
-      </a-col>
-    </a-row>
+      </a-collapse-item>
+    </a-collapse>
 
-    <!-- Add Device Modal -->
     <a-modal
       v-model:visible="showAddDevice"
       title="添加设备"
@@ -266,53 +188,35 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import {
-  IconSunFill,
-  IconThunderbolt,
-  IconCheckCircleFill,
-  IconGift,
-  IconArrowUp,
-  IconArrowDown,
-  IconRefresh,
-  IconCloud,
-  IconExclamationCircleFill,
-  IconInfoCircleFill,
-  IconPlus
-} from '@arco-design/web-vue/es/icon'
+import { IconPlus, IconRefresh } from '@arco-design/web-vue/es/icon'
 import EnergyCharts from '../components/charts/EnergyCharts.vue'
+import TimeSeriesPrediction from '../components/charts/TimeSeriesPrediction.vue'
 import api from '../api.js'
 
-// State
+const userId = 1
+
+const mode = ref('national')
+const regionCode = ref('')
+
 const loading = ref({
+  overview: false,
   forecast: false,
-  recommendations: false,
-  storage: false,
   devices: false
 })
 
-const todayData = ref({
-  generation: 0,
-  consumption: 0,
-  selfSufficiency: 0,
-  savings: 0
+const overview = ref({
+  regionName: '全国通用',
+  estimate: {},
+  sample: {},
+  userInput: {},
+  sourceMeta: {}
 })
 
-const trends = ref({
-  generation: 5.2,
-  consumption: -3.1
-})
+const forecast = ref({ daily: [], total: 0, averageDaily: 0 })
+const devices = ref([])
 
-const totalSavings = ref(1250.50)
-
-const forecast = ref({
-  daily: [],
-  total: 0,
-  averageDaily: 0
-})
-
-const recommendations = ref([])
 const storageRecommendations = ref({
   recommendedCapacity: 0,
   excessGeneration: 0,
@@ -321,137 +225,256 @@ const storageRecommendations = ref({
   estimatedSavings: 0
 })
 
-const devices = ref([])
 const showAddDevice = ref(false)
-const newDevice = ref({
-  deviceName: '',
-  deviceType: '',
-  capacity: 0
-})
+const newDevice = ref({ deviceName: '', deviceType: '', capacity: 0 })
 
-const chartData = ref({
-  generation: [],
-  consumption: []
-})
-
+const chartData = ref({ generation: [], consumption: [] })
 const currentPower = ref(0)
-const maxPower = ref(10)
+const maxPower = ref(12)
 
-// Forecast table columns
+let refreshTimer = null
+let refreshing = false
+
+const regionName = computed(() => (mode.value === 'shouguang' ? '山东寿光样板' : '全国通用'))
+
+const isDefinedNumber = (value) => value !== null && value !== undefined
+const pickCaliberValue = (userValue, estimateValue) => (isDefinedNumber(userValue) ? userValue : (isDefinedNumber(estimateValue) ? estimateValue : 0))
+
+const decisionCards = computed(() => {
+  const estimate = overview.value.estimate || {}
+  const userInput = overview.value.userInput || {}
+  const hasUserGeneration = isDefinedNumber(userInput.generationKwh)
+  const hasUserConsumption = isDefinedNumber(userInput.consumptionKwh)
+  const hasUserSufficiency = isDefinedNumber(userInput.selfSufficiencyPct)
+  const hasUserSavings = isDefinedNumber(userInput.savingsYuan)
+
+  return [
+    {
+      key: 'generation',
+      title: '今日发电（决策口径）',
+      value: Number(pickCaliberValue(userInput.generationKwh, estimate.generationKwh)),
+      suffix: 'kWh',
+      subtitle: hasUserGeneration ? '优先使用用户录入' : '用户缺失时使用模型估算'
+    },
+    {
+      key: 'consumption',
+      title: '今日用电（决策口径）',
+      value: Number(pickCaliberValue(userInput.consumptionKwh, estimate.consumptionKwh)),
+      suffix: 'kWh',
+      subtitle: hasUserConsumption ? '优先使用用户录入' : '用户缺失时使用模型估算'
+    },
+    {
+      key: 'sufficiency',
+      title: '自给率（决策口径）',
+      value: Number(pickCaliberValue(userInput.selfSufficiencyPct, estimate.selfSufficiencyPct)),
+      suffix: '%',
+      subtitle: hasUserSufficiency ? '优先使用用户录入' : '用于判断是否需要削峰移谷'
+    },
+    {
+      key: 'savings',
+      title: '节省金额（决策口径）',
+      value: Number(pickCaliberValue(userInput.savingsYuan, estimate.savingsYuan)),
+      suffix: '元',
+      precision: 2,
+      subtitle: hasUserSavings ? '优先使用用户录入' : '用于评估日经营收益'
+    }
+  ]
+})
+
+const calibers = computed(() => {
+  const sourceMeta = overview.value.sourceMeta || {}
+  return [
+    {
+      key: 'estimate',
+      label: '模型估算',
+      data: overview.value.estimate || {},
+      meta: sourceMeta.estimate || {}
+    },
+    {
+      key: 'sample',
+      label: '寿光样板参考',
+      data: overview.value.sample || {},
+      meta: sourceMeta.sample || {}
+    },
+    {
+      key: 'userInput',
+      label: '用户录入',
+      data: overview.value.userInput || {},
+      meta: sourceMeta.userInput || {}
+    }
+  ]
+})
+
+const autoInsights = computed(() => {
+  const estimate = overview.value.estimate || {}
+  const userInput = overview.value.userInput || {}
+  const sample = overview.value.sample || {}
+
+  const effective = {
+    generationKwh: Number(pickCaliberValue(userInput.generationKwh, estimate.generationKwh)),
+    consumptionKwh: Number(pickCaliberValue(userInput.consumptionKwh, estimate.consumptionKwh)),
+    selfSufficiencyPct: Number(pickCaliberValue(userInput.selfSufficiencyPct, estimate.selfSufficiencyPct)),
+    statusLabel: userInput.statusLabel || estimate.statusLabel || ''
+  }
+
+  const items = []
+
+  if (effective.generationKwh === 0 && effective.consumptionKwh === 0) {
+    items.push({
+      type: 'info',
+      title: '当前暂无有效经营数据',
+      desc: effective.statusLabel || '请先录入今日发用电数据，系统将给出更可靠的经营结论。'
+    })
+  } else if (effective.selfSufficiencyPct < 70) {
+    items.push({
+      type: 'warning',
+      title: '今日自给率偏低',
+      desc: `自给率 ${formatNumber(effective.selfSufficiencyPct, 1)}%，建议将高耗能作业转移到发电高峰时段。`
+    })
+  } else {
+    items.push({
+      type: 'success',
+      title: '今日发用电协同良好',
+      desc: `自给率 ${formatNumber(effective.selfSufficiencyPct, 1)}%，可保持当前运行策略。`
+    })
+  }
+
+  const gap = Number(sample.generationKwh || 0) - Number(estimate.generationKwh || 0)
+  items.push({
+    type: gap >= 0 ? 'info' : 'warning',
+    title: '样板对照结论',
+    desc: `寿光样板与本地估算发电差值 ${formatNumber(gap, 1)} kWh，可用于判断区域优化空间。`
+  })
+
+  return items
+})
+
 const forecastColumns = [
-  { title: '日期', dataIndex: 'date', slotName: 'date' },
+  { title: '日期', dataIndex: 'date' },
   { title: '预计发电', dataIndex: 'generation', slotName: 'generation' },
   { title: '日照时长', dataIndex: 'sunshineHours', slotName: 'sunshine' },
-  { title: '天气', dataIndex: 'cloudCover', slotName: 'weather' }
+  { title: '云量', dataIndex: 'cloudCover', slotName: 'weather' }
 ]
 
-// Methods
-const fetchTodayData = async () => {
+const formatNumber = (value, digits = 1) => Number(value || 0).toFixed(digits)
+
+const confidencePercent = (value) => `${Math.round(Number(value || 0) * 100)}%`
+
+const formatDateTime = (value) => {
+  if (!value) return '-'
+  const date = new Date(String(value).replace(' ', 'T'))
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('zh-CN', { hour12: false })
+}
+
+const loadOverview = async () => {
+  loading.value.overview = true
   try {
-    const data = await api.energy.getToday()
-    todayData.value = data
-    currentPower.value = parseFloat(data.generation) / 10 // Simulate current power
-  } catch (error) {
-    console.error('Failed to fetch today data:', error)
-    Message.error('获取今日数据失败')
+    const date = new Date().toISOString().slice(0, 10)
+    const data = await api.energy.getOverview({
+      date,
+      mode: mode.value,
+      regionCode: regionCode.value || undefined,
+      userId
+    })
+
+    overview.value = {
+      regionName: data.regionName || regionName.value,
+      estimate: data.estimate || {},
+      sample: data.sample || {},
+      userInput: data.userInput || {},
+      sourceMeta: data.sourceMeta || {}
+    }
+  } catch {
+    Message.warning('加载能源口径数据失败')
+  } finally {
+    loading.value.overview = false
   }
 }
 
-const fetchForecast = async () => {
+const loadForecast = async () => {
   loading.value.forecast = true
   try {
-    const data = await api.energy.getForecast({
-      latitude: 39.9,
-      longitude: 116.4,
-      capacity: 10
-    })
-    forecast.value = data.forecast
-    recommendations.value = data.recommendations
-    storageRecommendations.value = data.storage
-
-    // Update chart data
-    chartData.value.generation = data.forecast.daily.map(d => ({
-      date: d.date,
-      generation: parseFloat(d.generation)
-    }))
-  } catch (error) {
-    console.error('Failed to fetch forecast:', error)
-    Message.error('获取预测数据失败')
+    const data = await api.energy.getForecast({ latitude: 39.9, longitude: 116.4, capacity: 10 })
+    forecast.value = data.forecast || { daily: [], total: 0, averageDaily: 0 }
+    storageRecommendations.value = data.storage || storageRecommendations.value
+  } catch {
+    Message.warning('加载预测数据失败')
   } finally {
     loading.value.forecast = false
   }
 }
 
-const fetchDevices = async () => {
+const loadStatistics = async () => {
+  try {
+    const data = await api.energy.getStatistics({ period: 'month', userId })
+    const daily = data.daily || []
+    chartData.value = {
+      generation: daily.map((d) => ({ date: d.date, generation: Number(d.generation || 0), consumption: Number(d.consumption || 0) })),
+      consumption: daily.map((d) => ({ date: d.date, consumption: Number(d.consumption || 0) }))
+    }
+    const latest = chartData.value.generation[chartData.value.generation.length - 1]
+    currentPower.value = Number(latest?.generation || 0)
+  } catch {
+    chartData.value = { generation: [], consumption: [] }
+  }
+}
+
+const loadDevices = async () => {
   loading.value.devices = true
   try {
-    const data = await api.energy.getDevices()
-    devices.value = data.devices
-  } catch (error) {
-    console.error('Failed to fetch devices:', error)
-    Message.error('获取设备列表失败')
+    const data = await api.energy.getDevices({ userId })
+    devices.value = data.devices || []
+  } catch {
+    devices.value = []
   } finally {
     loading.value.devices = false
   }
 }
 
-const fetchStatistics = async () => {
-  try {
-    const data = await api.energy.getStatistics({ period: 'week' })
-    chartData.value.consumption = data.daily.map(d => ({
-      date: d.date,
-      consumption: parseFloat(d.consumption)
-    }))
-  } catch (error) {
-    console.error('Failed to fetch statistics:', error)
-  }
-}
-
-const refreshForecast = () => {
-  fetchForecast()
-}
-
 const handleAddDevice = async () => {
   if (!newDevice.value.deviceName || !newDevice.value.deviceType) {
-    Message.warning('请填写完整信息')
+    Message.warning('请填写完整设备信息')
     return
   }
-
   try {
-    await api.energy.addDevice(newDevice.value)
+    await api.energy.addDevice({ ...newDevice.value, userId })
     Message.success('设备添加成功')
     showAddDevice.value = false
     newDevice.value = { deviceName: '', deviceType: '', capacity: 0 }
-    fetchDevices()
-  } catch (error) {
-    console.error('Failed to add device:', error)
-    Message.error('添加设备失败')
+    loadDevices()
+  } catch {
+    Message.error('设备添加失败')
   }
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-'
-  const date = new Date(String(dateStr).replace(' ', 'T'))
-  if (isNaN(date.getTime())) return dateStr
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const weekdays = ['日', '一', '二', '三', '四', '五', '六']
-  const weekday = weekdays[date.getDay()]
-  return `${month}月${day}日 周${weekday}`
+const handleModeChange = () => {
+  loadOverview()
 }
 
-// Lifecycle
-onMounted(() => {
-  fetchTodayData()
-  fetchForecast()
-  fetchDevices()
-  fetchStatistics()
+const refreshCoreData = async () => {
+  if (refreshing) return
+  refreshing = true
+  try {
+    await Promise.all([loadOverview(), loadStatistics()])
+  } finally {
+    refreshing = false
+  }
+}
 
-  // Auto refresh every 30 seconds
-  setInterval(() => {
-    fetchTodayData()
-    currentPower.value = (Math.random() * 8 + 2).toFixed(2)
+onMounted(async () => {
+  await Promise.all([loadOverview(), loadForecast(), loadStatistics(), loadDevices()])
+
+  refreshTimer = setInterval(() => {
+    refreshCoreData()
   }, 30000)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
 })
 </script>
 
@@ -462,133 +485,112 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-.stats-row {
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  height: 100%;
-  transition: all 0.3s ease;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.stat-card.generation {
-  border-left: 4px solid #FFC107;
-}
-
-.stat-card.consumption {
-  border-left: 4px solid #2196F3;
-}
-
-.stat-card.self-sufficiency {
-  border-left: 4px solid #4CAF50;
-}
-
-.stat-card.savings {
-  border-left: 4px solid #FF9800;
-}
-
-.stat-trend {
-  margin-top: 12px;
-  font-size: 14px;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-info {
-  margin-top: 12px;
-  font-size: 12px;
-  color: #999;
-}
-
-.progress-bar {
-  margin-top: 12px;
-}
-
-.content-row {
-  margin-top: 20px;
-}
-
-.forecast-card,
-.recommendations-card,
-.storage-card,
-.devices-card {
+.decision-bar {
   margin-bottom: 16px;
 }
 
-.forecast-summary {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  color: white;
+.label {
+  color: #4e5969;
+  font-size: 13px;
 }
 
-.forecast-item {
-  text-align: center;
+.decision-note {
+  margin-top: 12px;
+  color: #86909c;
+  font-size: 13px;
 }
 
-.forecast-item .label {
-  font-size: 14px;
-  opacity: 0.9;
+.stats-row {
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  border-left: 4px solid #165dff;
+}
+
+.stat-subtitle {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #86909c;
+}
+
+.caliber-row {
+  margin-bottom: 16px;
+}
+
+.caliber-card {
+  min-height: 220px;
+}
+
+.caliber-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
-.forecast-item .value {
-  font-size: 24px;
-  font-weight: bold;
+.metric-item {
+  background: #f7f8fa;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.forecast-table {
-  margin-top: 16px;
+.metric-item span {
+  color: #86909c;
+  font-size: 12px;
 }
 
-.charts-section {
-  margin-top: 16px;
+.metric-item strong {
+  font-size: 14px;
+  color: #1d2129;
 }
 
-.recommendations-card :deep(.arco-alert) {
+.caliber-status {
+  color: #4e5969;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.caliber-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.main-row {
+  margin-bottom: 16px;
+}
+
+.interpret-card :deep(.arco-alert) {
+  margin-bottom: 10px;
+}
+
+.detail-collapse {
+  margin-top: 8px;
+}
+
+.forecast-summary {
   margin-bottom: 12px;
 }
 
-.storage-card :deep(.arco-descriptions-item-label) {
-  font-weight: 500;
+.summary-item {
+  background: #f2f3f5;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
 }
 
-@media (max-width: 768px) {
-  .energy-page {
-    padding: 12px;
-  }
-
-  .forecast-summary {
-    padding: 12px;
-  }
-
-  .forecast-item .value {
-    font-size: 18px;
-  }
+.summary-item .label {
+  color: #86909c;
+  font-size: 12px;
 }
 
-/* Animations */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-.stat-card :deep(.arco-statistic-value) {
-  animation: pulse 2s ease-in-out infinite;
+.summary-item .value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d2129;
 }
 </style>
-
