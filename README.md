@@ -161,6 +161,31 @@ AgriSol-AI/
 - ✅ 家庭协作看板 | Family collaboration board
 - ✅ 文化记忆保存 | Cultural memory preservation
 
+### 5. AI 智能助手 | AI Assistant
+- ✅ 多模式对话（综合/农事/能源/碳汇/政策/百科）| Multi-mode chat
+- ✅ 知识图谱问答 | Knowledge graph Q&A
+- ✅ 文件上传与多模态分析 | File upload & multimodal analysis
+- ✅ 历史会话管理 | Chat history management
+- ✅ 提示词管理 | Prompt template management
+
+## 视觉设计 | Visual Design
+
+> Neo Theme — 深色玻璃态设计语言，融合农业绿色与科技感
+
+- 深色背景 + 网格线纹理 + 霓虹绿色点缀
+- 玻璃态卡片（Glass Morphism）+ 微妙渐变边框
+- 流畅动画过渡与悬停微交互
+- 全端适配（桌面/平板/移动）
+
+### 配色系统 | Color System
+| 用途 | 色值 |
+|------|------|
+| 主色（碳绿） | `#00ff9d` |
+| 辅助蓝 | `#1890ff` |
+| 紫罗兰 | `#a78bfa` |
+| 背景深色 | `#060912` |
+| 卡片背景 | `rgba(255,255,255,0.03)` |
+
 ## 开发指南 | Development Guide
 
 详见 | See: [开发计划文档.md](./开发计划文档.md)
@@ -202,4 +227,4 @@ MIT License
 ---
 
 **版本 | Version**: v1.0.0-MVP
-**更新时间 | Last Updated**: 2026-03-11
+**更新时间 | Last Updated**: 2026-03-30
