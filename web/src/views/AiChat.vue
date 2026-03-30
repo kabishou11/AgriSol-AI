@@ -93,30 +93,50 @@
           <div v-if="messages.length === 0" class="welcome-area">
             <div class="welcome-icon">&#127793;</div>
             <h2 class="welcome-title">欢迎使用 AgriSol AI 智助</h2>
-            <p class="welcome-desc">您的农业光伏碳汇智能助手，选择模式后即可获得专业解答。支持多轮对话、文件上传和跨模块分析</p>
+            <p class="welcome-desc">您的农业光伏碳汇智能助手，选择模式后即可获得专业解答</p>
 
-            <!-- 模式说明 -->
-            <div class="mode-intro">
-              <div v-for="mode in modeDescriptions" :key="mode.key" class="mode-intro-item" :class="{ active: activeMode === mode.key }">
-                <span class="mode-intro-icon">{{ mode.icon }}</span>
-                <div class="mode-intro-text">
-                  <span class="mode-intro-name">{{ mode.name }}</span>
-                  <span class="mode-intro-desc">{{ mode.desc }}</span>
+            <!-- 模式说明（可折叠） -->
+            <div class="mode-section">
+              <button class="mode-section-toggle" @click="welcomeCollapsed = !welcomeCollapsed">
+                <span class="toggle-label">
+                  <span class="toggle-dot"></span>
+                  {{ currentModeLabel }}模式
+                </span>
+                <span class="toggle-arrow" :class="{ open: !welcomeCollapsed }">&#9662;</span>
+              </button>
+
+              <div v-if="!welcomeCollapsed" class="mode-body">
+                <!-- 模式选择卡片 -->
+                <div class="mode-intro">
+                  <button
+                    v-for="mode in modeDescriptions"
+                    :key="mode.key"
+                    class="mode-intro-item"
+                    :class="{ active: activeMode === mode.key }"
+                    @click="activeMode = mode.key; onModeChange()"
+                  >
+                    <span class="mode-intro-icon">{{ mode.icon }}</span>
+                    <div class="mode-intro-text">
+                      <span class="mode-intro-name">{{ mode.name }}</span>
+                      <span class="mode-intro-desc">{{ mode.desc }}</span>
+                    </div>
+                  </button>
                 </div>
-              </div>
-            </div>
 
-            <div class="quick-questions">
-              <p class="quick-title">快捷问题 · {{ currentModeLabel }}</p>
-              <div class="quick-grid">
-                <button
-                  v-for="(q, i) in currentQuickQuestions"
-                  :key="i"
-                  class="quick-btn"
-                  @click="useQuickQuestion(q)"
-                >
-                  {{ q }}
-                </button>
+                <!-- 快捷问题 -->
+                <div class="quick-questions">
+                  <p class="quick-title">快捷问题</p>
+                  <div class="quick-grid">
+                    <button
+                      v-for="(q, i) in currentQuickQuestions"
+                      :key="i"
+                      class="quick-btn"
+                      @click="useQuickQuestion(q)"
+                    >
+                      {{ q }}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -265,6 +285,7 @@ const fileInput = ref(null)
 const textareaRef = ref(null)
 const activeMode = ref('general')
 const sidebarCollapsed = ref(false)
+const welcomeCollapsed = ref(false)
 
 // 模式配置（映射到后端 systemPromptId）
 const modeDescriptions = [
@@ -1145,11 +1166,12 @@ watch(() => messages.value.length, () => {
 
 .welcome-area {
   text-align: center;
-  padding: 2.5rem 2rem 1.5rem;
+  padding: 2rem 1.5rem 1rem;
   animation: fadeIn 0.5s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0;
 }
 
 @keyframes fadeIn {
@@ -1158,73 +1180,143 @@ watch(() => messages.value.length, () => {
 }
 
 .welcome-icon {
-  font-size: 3.5rem;
-  margin-bottom: 1.25rem;
-  filter: drop-shadow(0 0 16px rgba(0, 255, 157, 0.3));
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 14px rgba(0, 255, 157, 0.3));
 }
 
 .welcome-title {
   font-family: var(--font-display);
-  font-size: 1.375rem;
+  font-size: 1.25rem;
   color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.5rem;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
 .welcome-desc {
-  color: rgba(255, 255, 255, 0.45);
-  max-width: 460px;
-  margin: 0 auto 1.75rem;
-  line-height: 1.65;
-  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.4);
+  max-width: 380px;
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+  font-size: 0.82rem;
+}
+
+/* ==================== Mode Section (Collapsible) ==================== */
+.mode-section {
+  width: 100%;
+  max-width: 680px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(0, 255, 157, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.mode-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 255, 157, 0.05);
+  border: none;
+  border-bottom: 1px solid rgba(0, 255, 157, 0.08);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  gap: 0.5rem;
+}
+
+.mode-section-toggle:hover {
+  background: rgba(0, 255, 157, 0.1);
+  color: rgba(0, 255, 157, 0.8);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.toggle-dot {
+  width: 8px;
+  height: 8px;
+  background: #00ff9d;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 255, 157, 0.6);
+  animation: statusPulse 2s ease infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.toggle-arrow {
+  font-size: 0.625rem;
+  transition: transform 0.25s ease;
+  color: rgba(0, 255, 157, 0.5);
+}
+
+.toggle-arrow.open {
+  transform: rotate(180deg);
+}
+
+.mode-body {
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
 }
 
 /* 模式说明区 */
 .mode-intro {
-  display: flex;
-  gap: 0.625rem;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-bottom: 1.75rem;
-  max-width: 720px;
-  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
 }
 
 .mode-intro-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem;
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.25s ease;
-  min-width: 160px;
+  transition: all 0.22s ease;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+  width: 100%;
 }
 
 .mode-intro-item:hover {
-  background: rgba(0, 255, 157, 0.07);
-  border-color: rgba(0, 255, 157, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 255, 157, 0.08);
+  background: rgba(0, 255, 157, 0.08);
+  border-color: rgba(0, 255, 157, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 255, 157, 0.08);
 }
 
 .mode-intro-item.active {
-  background: linear-gradient(135deg, rgba(0, 255, 157, 0.12) 0%, rgba(0, 255, 157, 0.04) 100%);
-  border-color: rgba(0, 255, 157, 0.35);
-  box-shadow: 0 0 16px rgba(0, 255, 157, 0.1), inset 0 1px 0 rgba(0, 255, 157, 0.1);
+  background: linear-gradient(135deg, rgba(0, 255, 157, 0.14) 0%, rgba(0, 255, 157, 0.05) 100%);
+  border-color: rgba(0, 255, 157, 0.4);
+  box-shadow: 0 0 14px rgba(0, 255, 157, 0.12), inset 0 1px 0 rgba(0, 255, 157, 0.1);
 }
 
 .mode-intro-icon {
   font-size: 1.375rem;
   flex-shrink: 0;
+  line-height: 1;
 }
 
 .mode-intro-text {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .mode-intro-name {
@@ -1232,24 +1324,26 @@ watch(() => messages.value.length, () => {
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
   font-family: var(--font-display);
+  white-space: nowrap;
 }
 
 .mode-intro-desc {
-  font-size: 0.67rem;
+  font-size: 0.66rem;
   color: rgba(255, 255, 255, 0.35);
-  margin-top: 0.1rem;
+  margin-top: 0.05rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .quick-questions {
-  max-width: 640px;
-  margin: 0 auto;
-  width: 100%;
+  margin-top: 0.25rem;
 }
 
 .quick-title {
   color: rgba(255, 255, 255, 0.3);
-  font-size: 0.78rem;
-  margin-bottom: 0.875rem;
+  font-size: 0.75rem;
+  margin-bottom: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -1257,28 +1351,28 @@ watch(() => messages.value.length, () => {
 .quick-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.625rem;
+  gap: 0.5rem;
   justify-content: center;
 }
 
 .quick-btn {
-  padding: 0.6rem 1.1rem;
+  padding: 0.5rem 0.9rem;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(0, 255, 157, 0.15);
+  border: 1px solid rgba(0, 255, 157, 0.12);
   border-radius: 18px;
   color: rgba(255, 255, 255, 0.5);
   font-family: var(--font-display);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.22s ease;
 }
 
 .quick-btn:hover {
   background: rgba(0, 255, 157, 0.1);
-  border-color: rgba(0, 255, 157, 0.4);
+  border-color: rgba(0, 255, 157, 0.38);
   color: #00ff9d;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 255, 157, 0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 255, 157, 0.1);
 }
 
 /* Message Wrapper */
