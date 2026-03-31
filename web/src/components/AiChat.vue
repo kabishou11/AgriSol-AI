@@ -16,7 +16,7 @@
               <div class="ai-name">农光智助 AI</div>
               <div class="ai-status">
                 <span class="status-dot"></span>
-                在线 · 知识库联动
+                在线 · 农智百科联动
               </div>
             </div>
           </div>
@@ -119,7 +119,7 @@ const toggleChat = () => { isOpen.value = !isOpen.value }
 const clearHistory = () => { messages.value = [] }
 
 const sourceLabel = (source) => {
-  const map = { ai: '🤖 AI回答', knowledge: '📚 知识库', fallback: '💡 建议' }
+  const map = { ai: '🤖 AI回答', knowledge: '📚 农智百科', fallback: '💡 建议' }
   return map[source] || source
 }
 
