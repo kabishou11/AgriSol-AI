@@ -132,3 +132,4 @@ credentials/
 # ============================================
 docs/plans/
 server/uploads/
+.playwright-mcp/
